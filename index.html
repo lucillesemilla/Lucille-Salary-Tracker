@@ -3,17 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Payment Tracker</title>
+<title>Lucille's Salary Tracker</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 24px; }
   h1 { font-size: 1.6rem; font-weight: 700; color: #f8fafc; margin-bottom: 4px; }
-  .subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 24px; }
+  .subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 16px; }
 
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  /* Countdown */
+  .countdown-box { background: linear-gradient(135deg, #1e3a5f, #1e293b); border: 1px solid #3b82f6; border-radius: 12px; padding: 14px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 14px; }
+  .countdown-box .cd-icon { font-size: 1.8rem; }
+  .countdown-box .cd-text { font-size: 0.8rem; color: #94a3b8; }
+  .countdown-box .cd-days { font-size: 1.4rem; font-weight: 800; color: #60a5fa; }
+  .countdown-box .cd-days.soon { color: #fbbf24; }
+  .countdown-box .cd-days.today { color: #4ade80; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 28px; }
   .card { background: #1e293b; border-radius: 12px; padding: 18px; border: 1px solid #334155; }
   .card-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
-  .card-value { font-size: 1.5rem; font-weight: 700; }
+  .card-value { font-size: 1.4rem; font-weight: 700; }
   .card-value.green { color: #4ade80; }
   .card-value.blue { color: #60a5fa; }
   .card-value.yellow { color: #fbbf24; }
@@ -21,32 +29,56 @@
 
   .section-title { font-size: 1rem; font-weight: 600; color: #cbd5e1; margin-bottom: 12px; }
 
-  table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155; margin-bottom: 28px; }
+  table { width: 100%; border-collapse: collapse; border-radius: 12px; overflow: hidden; border: 1px solid #334155; margin-bottom: 28px; }
   thead tr { background: #0f172a; }
-  th { padding: 12px 16px; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: .05em; color: #64748b; font-weight: 600; }
-  td { padding: 12px 16px; font-size: 0.875rem; border-top: 1px solid #1e3a5f22; }
-  tr:hover td { background: #243044; }
+  th { padding: 12px 16px; text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .05em; color: #64748b; font-weight: 600; }
+  td { padding: 12px 16px; font-size: 0.875rem; border-top: 1px solid #ffffff08; }
+
+  /* Row highlights */
+  tr.row-paid td { background: #052e16cc; }
+  tr.row-paid:hover td { background: #064e20cc; }
+  tr.row-overdue td { background: #2d0e0ecc; }
+  tr.row-overdue:hover td { background: #3d1212cc; }
+  tr.row-pending td { background: #1e293b; }
+  tr.row-pending:hover td { background: #243044; }
+
+  .overdue-tag { display: inline-block; padding: 2px 7px; border-radius: 999px; font-size: 0.68rem; font-weight: 700; background: #7f1d1d; color: #fca5a5; margin-left: 6px; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+
   .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
   .badge.paid { background: #14532d; color: #4ade80; }
   .badge.pending { background: #422006; color: #fbbf24; }
-  .amount { font-weight: 700; color: #4ade80; }
-  .del-btn { background: none; border: none; color: #64748b; cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 4px; }
+  .badge.overdue { background: #7f1d1d; color: #fca5a5; }
+
+  .amount { font-weight: 700; }
+  .amount.paid-amt { color: #4ade80; }
+  .amount.unpaid-amt { color: #f87171; }
+
+  .del-btn { background: none; border: none; color: #475569; cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 4px; }
   .del-btn:hover { color: #f87171; background: #3f1a1a; }
 
   .form-box { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 28px; }
-  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin-bottom: 14px; }
   label { font-size: 0.75rem; color: #94a3b8; display: block; margin-bottom: 4px; }
   input, select { width: 100%; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 8px; padding: 8px 12px; font-size: 0.875rem; outline: none; }
   input:focus, select:focus { border-color: #3b82f6; }
   .add-btn { background: #3b82f6; color: #fff; border: none; border-radius: 8px; padding: 10px 24px; font-size: 0.875rem; font-weight: 600; cursor: pointer; }
   .add-btn:hover { background: #2563eb; }
 
-  .progress-bar-wrap { background: #0f172a; border-radius: 999px; height: 8px; margin-top: 8px; overflow: hidden; }
-  .progress-bar { height: 8px; border-radius: 999px; background: linear-gradient(90deg, #3b82f6, #4ade80); transition: width .4s; }
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #1e293b; border: 2px solid #f87171; border-radius: 16px; padding: 32px 28px; max-width: 400px; width: 90%; box-shadow: 0 0 50px rgba(248,113,113,.35); text-align: center; }
+  .modal-icon { font-size: 3rem; margin-bottom: 10px; }
+  .modal-title { font-size: 1.4rem; font-weight: 800; color: #f87171; margin-bottom: 8px; }
+  .modal-sub { color: #94a3b8; font-size: 0.875rem; margin-bottom: 18px; line-height: 1.6; }
+  .modal-items { background: #0f172a; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; text-align: left; }
+  .modal-items li { list-style: none; color: #fca5a5; font-size: 0.83rem; padding: 5px 0; border-bottom: 1px solid #1e293b; }
+  .modal-items li:last-child { border-bottom: none; }
+  .modal-close { background: #f87171; color: #fff; border: none; border-radius: 8px; padding: 10px 32px; font-size: 0.9rem; font-weight: 700; cursor: pointer; width: 100%; }
+  .modal-close:hover { background: #ef4444; }
 
-  @media (max-width: 480px) {
-    th:nth-child(3), td:nth-child(3) { display: none; }
-  }
+  @media(max-width:520px){ th:nth-child(3),td:nth-child(3){ display:none; } }
 </style>
 </head>
 <body>
@@ -54,19 +86,43 @@
 <h1>💰 Lucille's Salary Tracker</h1>
 <p class="subtitle">Monthly rate: $2,400 &nbsp;|&nbsp; Tracking all payments</p>
 
+<!-- Countdown -->
+<div class="countdown-box">
+  <div class="cd-icon">📅</div>
+  <div>
+    <div class="cd-text">Next Payment Due</div>
+    <div class="cd-days" id="cdDays">—</div>
+    <div class="cd-text" id="cdLabel"></div>
+  </div>
+</div>
+
+<!-- Overdue Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-icon">🔔</div>
+    <div class="modal-title">Payment Due!</div>
+    <div class="modal-sub">The following payments are overdue and still unpaid. Please follow up as soon as possible.</div>
+    <ul class="modal-items" id="modalItems"></ul>
+    <button class="modal-close" onclick="closeModal()">Got It</button>
+  </div>
+</div>
+
+<!-- Summary Cards -->
 <div class="cards">
   <div class="card"><div class="card-label">Total Received</div><div class="card-value green" id="totalPaid">$0</div></div>
   <div class="card"><div class="card-label">Payments Made</div><div class="card-value blue" id="countPaid">0</div></div>
   <div class="card"><div class="card-label">Pending Amount</div><div class="card-value yellow" id="totalPending">$0</div></div>
-  <div class="card"><div class="card-label">Monthly Rate</div><div class="card-value" style="color:#e2e8f0">$2,400</div></div>
+  <div class="card"><div class="card-label">Overdue</div><div class="card-value red" id="countOverdue">0</div></div>
 </div>
 
+<!-- Add Form -->
 <div class="form-box">
   <div class="section-title">Add New Payment</div>
   <div class="form-grid">
     <div><label>Date Received</label><input type="date" id="fDate"></div>
     <div><label>Amount ($)</label><input type="number" id="fAmount" placeholder="2400" min="0" step="0.01"></div>
     <div><label>Period Covered</label><input type="text" id="fPeriod" placeholder="e.g. April 2025"></div>
+    <div><label>Due Date</label><input type="date" id="fDue"></div>
     <div><label>Status</label>
       <select id="fStatus">
         <option value="paid">Paid</option>
@@ -85,6 +141,7 @@
       <th>#</th>
       <th>Date Received</th>
       <th>Period Covered</th>
+      <th>Due Date</th>
       <th>Amount</th>
       <th>Status</th>
       <th>Notes</th>
@@ -95,32 +152,81 @@
 </table>
 
 <script>
-let payments = [
-  { id: 1, date: "2025-03-27", amount: 3000, period: "Feb 23–27 + March 2025", status: "paid", notes: "Feb partial ($600) + Full March ($2,400)" }
-];
+const today = new Date(); today.setHours(0,0,0,0);
 
+let payments = [
+  { id: 1, date: "2025-03-27", amount: 3000, period: "Feb 23–27 + March 2025", due: "2025-03-31", status: "paid", notes: "Feb partial ($600) + Full March ($2,400)" }
+];
 let nextId = 2;
 
-function fmt(n) { return '$' + n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+const fmt = n => '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtDate = s => s ? new Date(s+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+
+const isOverdue = p => p.status !== 'paid' && p.due && new Date(p.due+'T00:00:00') < today;
+
+function updateCountdown() {
+  // Find the nearest future due date among pending payments, or next month's expected payment
+  let nearest = null;
+  payments.forEach(p => {
+    if (p.status !== 'paid' && p.due) {
+      const d = new Date(p.due+'T00:00:00');
+      if (!nearest || d < nearest) nearest = d;
+    }
+  });
+
+  // Fallback: estimate next payment as 1st of next month
+  if (!nearest) {
+    nearest = new Date(today.getFullYear(), today.getMonth()+1, 1);
+  }
+
+  const diff = Math.round((nearest - today) / 86400000);
+  const el = document.getElementById('cdDays');
+  const lbl = document.getElementById('cdLabel');
+
+  if (diff < 0) {
+    el.textContent = `${Math.abs(diff)} day${Math.abs(diff)!==1?'s':''} overdue`;
+    el.className = 'cd-days'; el.style.color = '#f87171';
+    lbl.textContent = `Due: ${fmtDate(nearest.toISOString().slice(0,10))}`;
+  } else if (diff === 0) {
+    el.textContent = 'Due Today!';
+    el.className = 'cd-days today';
+    lbl.textContent = `Due: ${fmtDate(nearest.toISOString().slice(0,10))}`;
+  } else if (diff <= 7) {
+    el.textContent = `${diff} day${diff!==1?'s':''} left`;
+    el.className = 'cd-days soon';
+    lbl.textContent = `Due: ${fmtDate(nearest.toISOString().slice(0,10))}`;
+  } else {
+    el.textContent = `${diff} days until next payment`;
+    el.className = 'cd-days';
+    lbl.textContent = `Due: ${fmtDate(nearest.toISOString().slice(0,10))}`;
+  }
+}
 
 function render() {
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
-  let totalPaid = 0, totalPending = 0, countPaid = 0;
+  let totalPaid=0, totalPending=0, countPaid=0, overduePmts=[];
 
   payments.forEach((p, i) => {
+    const od = isOverdue(p);
     if (p.status === 'paid') { totalPaid += p.amount; countPaid++; }
-    else totalPending += p.amount;
+    else { totalPending += p.amount; if (od) overduePmts.push(p); }
+
+    const rowClass = p.status === 'paid' ? 'row-paid' : od ? 'row-overdue' : 'row-pending';
+    const statusLabel = od ? 'overdue' : p.status;
+    const amtClass = p.status === 'paid' ? 'paid-amt' : 'unpaid-amt';
 
     const tr = document.createElement('tr');
+    tr.className = rowClass;
     tr.innerHTML = `
-      <td>${i + 1}</td>
-      <td>${p.date ? new Date(p.date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '—'}</td>
-      <td>${p.period || '—'}</td>
-      <td class="amount">${fmt(p.amount)}</td>
-      <td><span class="badge ${p.status}">${p.status.charAt(0).toUpperCase()+p.status.slice(1)}</span></td>
-      <td style="color:#94a3b8">${p.notes || '—'}</td>
-      <td><button class="del-btn" onclick="del(${p.id})" title="Delete">✕</button></td>
+      <td>${i+1}</td>
+      <td>${fmtDate(p.date)}</td>
+      <td>${p.period||'—'}${od?'<span class="overdue-tag">OVERDUE</span>':''}</td>
+      <td style="color:${od?'#f87171':p.status==='paid'?'#4ade80':'#94a3b8'}">${fmtDate(p.due)}</td>
+      <td class="amount ${amtClass}">${fmt(p.amount)}</td>
+      <td><span class="badge ${statusLabel}">${statusLabel.charAt(0).toUpperCase()+statusLabel.slice(1)}</span></td>
+      <td style="color:#94a3b8;font-size:0.82rem">${p.notes||'—'}</td>
+      <td><button class="del-btn" onclick="del(${p.id})">✕</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -128,24 +234,40 @@ function render() {
   document.getElementById('totalPaid').textContent = fmt(totalPaid);
   document.getElementById('totalPending').textContent = fmt(totalPending);
   document.getElementById('countPaid').textContent = countPaid;
+  document.getElementById('countOverdue').textContent = overduePmts.length;
+
+  // Modal
+  const list = document.getElementById('modalItems');
+  list.innerHTML = '';
+  overduePmts.forEach(p => {
+    const li = document.createElement('li');
+    li.textContent = `${p.period||'Unknown period'} — ${fmt(p.amount)} (due ${fmtDate(p.due)})`;
+    list.appendChild(li);
+  });
+  if (overduePmts.length > 0 && !sessionStorage.getItem('alertShown')) {
+    showModal();
+    sessionStorage.setItem('alertShown', '1');
+  }
+
+  updateCountdown();
 }
+
+function showModal() { document.getElementById('modalOverlay').classList.add('show'); }
+function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
+document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target.id === 'modalOverlay') closeModal(); });
 
 function addPayment() {
   const date = document.getElementById('fDate').value;
   const amount = parseFloat(document.getElementById('fAmount').value);
   const period = document.getElementById('fPeriod').value.trim();
+  const due = document.getElementById('fDue').value;
   const status = document.getElementById('fStatus').value;
   const notes = document.getElementById('fNotes').value.trim();
-
   if (!amount || isNaN(amount)) { alert('Please enter a valid amount.'); return; }
-
-  payments.push({ id: nextId++, date, amount, period, status, notes });
+  payments.push({ id: nextId++, date, amount, period, due, status, notes });
   render();
-
-  document.getElementById('fDate').value = '';
-  document.getElementById('fAmount').value = '';
-  document.getElementById('fPeriod').value = '';
-  document.getElementById('fNotes').value = '';
+  ['fDate','fAmount','fPeriod','fDue','fNotes'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('fStatus').value = 'paid';
 }
 
 function del(id) {
