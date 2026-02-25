@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 24px; }
+  h1 { font-size: 1.6rem; font-weight: 700; color: #f8fafc; margin-bottom: 4px; }
+  .subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 24px; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .card { background: #1e293b; border-radius: 12px; padding: 18px; border: 1px solid #334155; }
+  .card-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+  .card-value { font-size: 1.5rem; font-weight: 700; }
+  .card-value.green { color: #4ade80; }
+  .card-value.blue { color: #60a5fa; }
+  .card-value.yellow { color: #fbbf24; }
+  .card-value.red { color: #f87171; }
+
+  .section-title { font-size: 1rem; font-weight: 600; color: #cbd5e1; margin-bottom: 12px; }
+
+  table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155; margin-bottom: 28px; }
+  thead tr { background: #0f172a; }
+  th { padding: 12px 16px; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: .05em; color: #64748b; font-weight: 600; }
+  td { padding: 12px 16px; font-size: 0.875rem; border-top: 1px solid #1e3a5f22; }
+  tr:hover td { background: #243044; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+  .badge.paid { background: #14532d; color: #4ade80; }
+  .badge.pending { background: #422006; color: #fbbf24; }
+  .amount { font-weight: 700; color: #4ade80; }
+  .del-btn { background: none; border: none; color: #64748b; cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 4px; }
+  .del-btn:hover { color: #f87171; background: #3f1a1a; }
+
+  .form-box { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 28px; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px; }
+  label { font-size: 0.75rem; color: #94a3b8; display: block; margin-bottom: 4px; }
+  input, select { width: 100%; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 8px; padding: 8px 12px; font-size: 0.875rem; outline: none; }
+  input:focus, select:focus { border-color: #3b82f6; }
+  .add-btn { background: #3b82f6; color: #fff; border: none; border-radius: 8px; padding: 10px 24px; font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+  .add-btn:hover { background: #2563eb; }
+
+  .progress-bar-wrap { background: #0f172a; border-radius: 999px; height: 8px; margin-top: 8px; overflow: hidden; }
+  .progress-bar { height: 8px; border-radius: 999px; background: linear-gradient(90deg, #3b82f6, #4ade80); transition: width .4s; }
+
+  @media (max-width: 480px) {
+    th:nth-child(3), td:nth-child(3) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<h1>💰 Lucille's Salary Tracker</h1>
+<p class="subtitle">Monthly rate: $2,400 &nbsp;|&nbsp; Tracking all payments</p>
+
+<div class="cards">
+  <div class="card"><div class="card-label">Total Received</div><div class="card-value green" id="totalPaid">$0</div></div>
+  <div class="card"><div class="card-label">Payments Made</div><div class="card-value blue" id="countPaid">0</div></div>
+  <div class="card"><div class="card-label">Pending Amount</div><div class="card-value yellow" id="totalPending">$0</div></div>
+  <div class="card"><div class="card-label">Monthly Rate</div><div class="card-value" style="color:#e2e8f0">$2,400</div></div>
+</div>
+
+<div class="form-box">
+  <div class="section-title">Add New Payment</div>
+  <div class="form-grid">
+    <div><label>Date Received</label><input type="date" id="fDate"></div>
+    <div><label>Amount ($)</label><input type="number" id="fAmount" placeholder="2400" min="0" step="0.01"></div>
+    <div><label>Period Covered</label><input type="text" id="fPeriod" placeholder="e.g. April 2025"></div>
+    <div><label>Status</label>
+      <select id="fStatus">
+        <option value="paid">Paid</option>
+        <option value="pending">Pending</option>
+      </select>
+    </div>
+    <div><label>Notes (optional)</label><input type="text" id="fNotes" placeholder="e.g. Direct deposit"></div>
+  </div>
+  <button class="add-btn" onclick="addPayment()">+ Add Payment</button>
+</div>
+
+<div class="section-title">Payment History</div>
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Date Received</th>
+      <th>Period Covered</th>
+      <th>Amount</th>
+      <th>Status</th>
+      <th>Notes</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+
+<script>
+let payments = [
+  { id: 1, date: "2025-03-27", amount: 3000, period: "Feb 23–27 + March 2025", status: "paid", notes: "Feb partial ($600) + Full March ($2,400)" }
+];
+
+let nextId = 2;
+
+function fmt(n) { return '$' + n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+
+function render() {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  let totalPaid = 0, totalPending = 0, countPaid = 0;
+
+  payments.forEach((p, i) => {
+    if (p.status === 'paid') { totalPaid += p.amount; countPaid++; }
+    else totalPending += p.amount;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${p.date ? new Date(p.date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '—'}</td>
+      <td>${p.period || '—'}</td>
+      <td class="amount">${fmt(p.amount)}</td>
+      <td><span class="badge ${p.status}">${p.status.charAt(0).toUpperCase()+p.status.slice(1)}</span></td>
+      <td style="color:#94a3b8">${p.notes || '—'}</td>
+      <td><button class="del-btn" onclick="del(${p.id})" title="Delete">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('totalPaid').textContent = fmt(totalPaid);
+  document.getElementById('totalPending').textContent = fmt(totalPending);
+  document.getElementById('countPaid').textContent = countPaid;
+}
+
+function addPayment() {
+  const date = document.getElementById('fDate').value;
+  const amount = parseFloat(document.getElementById('fAmount').value);
+  const period = document.getElementById('fPeriod').value.trim();
+  const status = document.getElementById('fStatus').value;
+  const notes = document.getElementById('fNotes').value.trim();
+
+  if (!amount || isNaN(amount)) { alert('Please enter a valid amount.'); return; }
+
+  payments.push({ id: nextId++, date, amount, period, status, notes });
+  render();
+
+  document.getElementById('fDate').value = '';
+  document.getElementById('fAmount').value = '';
+  document.getElementById('fPeriod').value = '';
+  document.getElementById('fNotes').value = '';
+}
+
+function del(id) {
+  if (!confirm('Remove this payment?')) return;
+  payments = payments.filter(p => p.id !== id);
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
