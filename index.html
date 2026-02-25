@@ -155,7 +155,7 @@
 const today = new Date(); today.setHours(0,0,0,0);
 
 let payments = [
-  { id: 1, date: "2025-03-27", amount: 3000, period: "Feb 23–27 + March 2025", due: "2025-03-31", status: "paid", notes: "Feb partial ($600) + Full March ($2,400)" }
+  { id: 1, date: "", amount: 3000, period: "Feb 23–27 + March 2026", due: "2026-03-02", status: "pending", notes: "Feb partial ($600) + Full March ($2,400) — due Mar 2" }
 ];
 let nextId = 2;
 
@@ -244,7 +244,20 @@ function render() {
     li.textContent = `${p.period||'Unknown period'} — ${fmt(p.amount)} (due ${fmtDate(p.due)})`;
     list.appendChild(li);
   });
-  if (overduePmts.length > 0 && !sessionStorage.getItem('alertShown')) {
+  // Show modal only on the exact due date (not before, not after)
+  const dueTodayPmts = payments.filter(p => {
+    if (p.status === 'paid' || !p.due) return false;
+    const due = new Date(p.due+'T00:00:00');
+    return due.getTime() === today.getTime();
+  });
+  if (dueTodayPmts.length > 0 && !sessionStorage.getItem('alertShown')) {
+    // Rebuild modal list with due-today payments
+    list.innerHTML = '';
+    dueTodayPmts.forEach(p => {
+      const li = document.createElement('li');
+      li.textContent = `${p.period||'Unknown period'} — ${fmt(p.amount)} (due today)`;
+      list.appendChild(li);
+    });
     showModal();
     sessionStorage.setItem('alertShown', '1');
   }
