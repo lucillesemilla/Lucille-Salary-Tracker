@@ -4,26 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lucille's Salary Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-firestore-compat.min.js"></script>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;padding:24px}
   h1{font-size:1.6rem;font-weight:700;color:#f8fafc;margin-bottom:4px}
   .subtitle{color:#94a3b8;font-size:.9rem;margin-bottom:16px}
 
-  /* Tabs */
   .tabs{display:flex;gap:8px;margin-bottom:24px}
   .tab{padding:10px 24px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#94a3b8;cursor:pointer;font-size:.875rem;font-weight:600;transition:.2s}
   .tab.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
   .tab:hover:not(.active){background:#243044;color:#e2e8f0}
   .page{display:none}.page.active{display:block}
 
-  /* Countdown */
   .countdown-box{background:linear-gradient(135deg,#1e3a5f,#1e293b);border:1px solid #3b82f6;border-radius:12px;padding:14px 20px;margin-bottom:24px;display:flex;align-items:center;gap:14px}
   .cd-icon{font-size:1.8rem}.cd-text{font-size:.8rem;color:#94a3b8}
   .cd-days{font-size:1.4rem;font-weight:800;color:#60a5fa}
   .cd-days.soon{color:#fbbf24}.cd-days.today{color:#4ade80}
 
-  /* Cards */
   .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:28px}
   .card{background:#1e293b;border-radius:12px;padding:18px;border:1px solid #334155}
   .card-label{font-size:.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
@@ -33,7 +32,6 @@
 
   .section-title{font-size:1rem;font-weight:600;color:#cbd5e1;margin-bottom:12px}
 
-  /* Tables */
   table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;border:1px solid #334155;margin-bottom:28px}
   thead tr{background:#0f172a}
   th{padding:12px 16px;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:#64748b;font-weight:600}
@@ -56,7 +54,6 @@
   .del-btn{background:none;border:none;color:#475569;cursor:pointer;font-size:1rem;padding:2px 6px;border-radius:4px}
   .del-btn:hover{color:#f87171;background:#3f1a1a}
 
-  /* Forms */
   .form-box{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;margin-bottom:28px}
   .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:14px}
   label{font-size:.75rem;color:#94a3b8;display:block;margin-bottom:4px}
@@ -68,7 +65,6 @@
   .btn-green{background:#16a34a;color:#fff}.btn-green:hover{background:#15803d}
   .btn-row{display:flex;gap:10px;flex-wrap:wrap}
 
-  /* Modal */
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center}
   .modal-overlay.show{display:flex}
   .modal{background:#1e293b;border:2px solid #f87171;border-radius:16px;padding:32px 28px;max-width:400px;width:90%;box-shadow:0 0 50px rgba(248,113,113,.35);text-align:center}
@@ -81,7 +77,6 @@
   .modal-close{background:#f87171;color:#fff;border:none;border-radius:8px;padding:10px 32px;font-size:.9rem;font-weight:700;cursor:pointer;width:100%}
   .modal-close:hover{background:#ef4444}
 
-  /* Timesheet */
   .week-nav{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
   .week-nav button{background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:7px 16px;cursor:pointer;font-size:.85rem}
   .week-nav button:hover{background:#243044}
@@ -97,22 +92,26 @@
   .hours-cell.zero{color:#475569}
   tr.ts-row:hover td{background:#1a2540}
   .total-row td{background:#0f172a!important;font-weight:700;color:#f8fafc;font-size:.9rem}
+
+  .save-status{font-size:.8rem;color:#4ade80;margin-left:12px;opacity:0;transition:opacity .4s}
+  .save-status.show{opacity:1}
+
+  .loading{text-align:center;padding:40px;color:#64748b;font-size:.9rem}
+  .sync-badge{display:inline-block;background:#0f2e0f;color:#4ade80;border:1px solid #4ade80;border-radius:999px;font-size:.7rem;font-weight:700;padding:2px 10px;margin-left:10px;vertical-align:middle}
 </style>
 </head>
 <body>
 
-<h1>💰 Lucille's Salary Tracker</h1>
-<p class="subtitle">Monthly rate: $2,400 &nbsp;|&nbsp; Tracking all payments</p>
+<h1>💰 Lucille's Salary Tracker <span class="sync-badge">🔥 Live</span></h1>
+<p class="subtitle">Monthly rate: $2,400 &nbsp;|&nbsp; $15/hr &nbsp;|&nbsp; Mon–Fri, 8 hrs/day</p>
 
-<!-- Tabs -->
 <div class="tabs">
   <div class="tab active" onclick="switchTab('payments')">💳 Payment Tracker</div>
   <div class="tab" onclick="switchTab('timesheet')">🕐 Weekly Timesheet</div>
 </div>
 
-<!-- ═══════════════════ PAYMENT TRACKER PAGE ═══════════════════ -->
+<!-- PAYMENT TRACKER -->
 <div class="page active" id="page-payments">
-
   <div class="countdown-box">
     <div class="cd-icon">📅</div>
     <div>
@@ -121,14 +120,12 @@
       <div class="cd-text" id="cdLabel"></div>
     </div>
   </div>
-
   <div class="cards">
     <div class="card"><div class="card-label">Total Received</div><div class="card-value green" id="totalPaid">$0</div></div>
     <div class="card"><div class="card-label">Payments Made</div><div class="card-value blue" id="countPaid">0</div></div>
     <div class="card"><div class="card-label">Pending Amount</div><div class="card-value yellow" id="totalPending">$0</div></div>
     <div class="card"><div class="card-label">Overdue</div><div class="card-value red" id="countOverdue">0</div></div>
   </div>
-
   <div class="form-box">
     <div class="section-title">Add New Payment</div>
     <div class="form-grid">
@@ -143,49 +140,40 @@
     </div>
     <button class="btn btn-blue" onclick="addPayment()">+ Add Payment</button>
   </div>
-
   <div class="section-title">Payment History</div>
-  <table>
+  <div id="payments-loading" class="loading">Loading payments...</div>
+  <table id="payments-table" style="display:none">
     <thead>
-      <tr>
-        <th>#</th><th>Date Received</th><th>Period Covered</th><th>Due Date</th>
-        <th>Amount</th><th>Status</th><th>Notes</th><th></th>
-      </tr>
+      <tr><th>#</th><th>Date Received</th><th>Period Covered</th><th>Due Date</th><th>Amount</th><th>Status</th><th>Notes</th><th></th></tr>
     </thead>
     <tbody id="tbody"></tbody>
   </table>
 </div>
 
-<!-- ═══════════════════ TIMESHEET PAGE ═══════════════════ -->
+<!-- TIMESHEET -->
 <div class="page" id="page-timesheet">
-
   <div class="week-nav">
     <button onclick="changeWeek(-1)">◀ Prev</button>
     <div class="week-label" id="weekLabel"></div>
     <button onclick="changeWeek(1)">Next ▶</button>
   </div>
-
   <div class="ts-summary">
     <div class="ts-card"><div class="lbl">Total Hours</div><div class="val" id="tsHours">0.00 hrs</div></div>
     <div class="ts-card"><div class="lbl">Days Worked</div><div class="val" id="tsDays">0</div></div>
     <div class="ts-card"><div class="lbl">Hourly Rate</div><div class="val">$15.00</div></div>
     <div class="ts-card"><div class="lbl">Week Earnings</div><div class="val green" id="tsEarnings">$0.00</div></div>
   </div>
-
   <div class="section-title">Timesheet for the Week</div>
   <table>
     <thead>
-      <tr>
-        <th>Day</th><th>Date</th><th>Time In</th><th>Time Out</th>
-        <th>Break (mins)</th><th>Total Hours</th><th>Notes</th>
-      </tr>
+      <tr><th>Day</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Break (mins)</th><th>Total Hours</th><th>Notes</th></tr>
     </thead>
     <tbody id="ts-tbody"></tbody>
     <tfoot><tr class="total-row" id="ts-total"></tr></tfoot>
   </table>
-
   <div class="btn-row">
     <button class="btn btn-green" onclick="saveTimesheet()">💾 Save Week</button>
+    <span class="save-status" id="saveStatus">✅ Saved to cloud!</span>
     <button class="btn btn-red" onclick="clearWeek()">🗑 Clear Week</button>
   </div>
 </div>
@@ -202,24 +190,42 @@
 </div>
 
 <script>
-// ─── Helpers ───────────────────────────────────────────────
+// ─── Firebase init ──────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyAOZfZ3zzuAe-qOmSK4YN0sL7SlwufbZSc",
+  authDomain: "lucille-salary-tracker.firebaseapp.com",
+  projectId: "lucille-salary-tracker",
+  storageBucket: "lucille-salary-tracker.firebasestorage.app",
+  messagingSenderId: "498210839077",
+  appId: "1:498210839077:web:80c5d920980944a9da3dcc"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ─── Helpers ────────────────────────────────────────────────
 const today = new Date(); today.setHours(0,0,0,0);
 const fmt = n => '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtDate = s => s ? new Date(s+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
 const isOverdue = p => p.status!=='paid' && p.due && new Date(p.due+'T00:00:00') < today;
 
-// ─── Tab switching ──────────────────────────────────────────
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['payments','timesheet'][i]===tab));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
 }
 
-// ═══════════════════ PAYMENT TRACKER ═══════════════════════
-let payments = [
-  {id:1,date:"",amount:3000,period:"Feb 23–27 + March 2026",due:"2026-03-02",status:"pending",notes:"Feb partial ($600) + Full March ($2,400) — due Mar 2"}
-];
-let nextId = 2;
+// ═══════════════ PAYMENT TRACKER ════════════════════════════
+let payments = [];
+
+// Real-time listener
+db.collection('payments').orderBy('createdAt','asc').onSnapshot(snap => {
+  payments = snap.docs.map(d => ({...d.data(), _docId: d.id}));
+  document.getElementById('payments-loading').style.display='none';
+  document.getElementById('payments-table').style.display='table';
+  renderPayments();
+}, err => {
+  document.getElementById('payments-loading').textContent = '⚠️ Could not load payments. Check your connection.';
+});
 
 function updateCountdown() {
   let nearest = null;
@@ -257,7 +263,7 @@ function renderPayments() {
       <td class="amount ${p.status==='paid'?'paid-amt':'unpaid-amt'}">${fmt(p.amount)}</td>
       <td><span class="badge ${sl}">${sl.charAt(0).toUpperCase()+sl.slice(1)}</span></td>
       <td style="color:#94a3b8;font-size:.82rem">${p.notes||'—'}</td>
-      <td><button class="del-btn" onclick="delPayment(${p.id})">✕</button></td>`;
+      <td><button class="del-btn" onclick="delPayment('${p._docId}')">✕</button></td>`;
     tbody.appendChild(tr);
   });
   document.getElementById('totalPaid').textContent=fmt(totalPaid);
@@ -276,64 +282,92 @@ function showModal(){ document.getElementById('modalOverlay').classList.add('sho
 function closeModal(){ document.getElementById('modalOverlay').classList.remove('show'); }
 document.getElementById('modalOverlay').addEventListener('click',e=>{ if(e.target.id==='modalOverlay') closeModal(); });
 
-function addPayment() {
+async function addPayment() {
   const amount=parseFloat(document.getElementById('fAmount').value);
   if(!amount||isNaN(amount)){ alert('Please enter a valid amount.'); return; }
-  payments.push({id:nextId++,date:document.getElementById('fDate').value,amount,period:document.getElementById('fPeriod').value.trim(),due:document.getElementById('fDue').value,status:document.getElementById('fStatus').value,notes:document.getElementById('fNotes').value.trim()});
-  renderPayments();
-  ['fDate','fAmount','fPeriod','fDue','fNotes'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('fStatus').value='paid';
+  const p={
+    date:document.getElementById('fDate').value,
+    amount,
+    period:document.getElementById('fPeriod').value.trim(),
+    due:document.getElementById('fDue').value,
+    status:document.getElementById('fStatus').value,
+    notes:document.getElementById('fNotes').value.trim(),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  try {
+    await db.collection('payments').add(p);
+    ['fDate','fAmount','fPeriod','fDue','fNotes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('fStatus').value='paid';
+  } catch(e){ alert('⚠️ Could not save payment: '+e.message); }
 }
 
-function delPayment(id){ if(!confirm('Remove this payment?')) return; payments=payments.filter(p=>p.id!==id); renderPayments(); }
+async function delPayment(docId){
+  if(!confirm('Remove this payment?')) return;
+  try { await db.collection('payments').doc(docId).delete(); }
+  catch(e){ alert('⚠️ Could not delete: '+e.message); }
+}
 
-// ═══════════════════ TIMESHEET ══════════════════════════════
+// Seed initial payment if collection is empty
+db.collection('payments').get().then(snap => {
+  if(snap.empty){
+    db.collection('payments').add({
+      date:"", amount:3000, period:"Feb 23–27 + March 2026",
+      due:"2026-03-02", status:"pending",
+      notes:"Feb partial ($600) + Full March ($2,400) — due Mar 2",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+});
+
+// ═══════════════ TIMESHEET ══════════════════════════════════
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 const HOURLY=15;
 let weekOffset=0;
-let timesheetData={}; // key: "YYYY-Www" => array of 7 day objects
+let timesheetData={};
 
 function getWeekKey(offset){
-  const d=new Date(today); d.setDate(d.getDate()-((d.getDay()+6)%7)+offset*7);
+  const d=new Date(today);
+  d.setDate(d.getDate()-((d.getDay()+6)%7)+offset*7);
   const jan1=new Date(d.getFullYear(),0,1);
   const wk=Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
   return `${d.getFullYear()}-W${String(wk).padStart(2,'0')}`;
 }
 
 function getWeekDates(offset){
-  const dates=[];
-  const base=new Date(today);
-  const dow=(base.getDay()+6)%7; // Mon=0
+  const dates=[], base=new Date(today);
+  const dow=(base.getDay()+6)%7;
   base.setDate(base.getDate()-dow+offset*7);
-  for(let i=0;i<7;i++){
-    const d=new Date(base); d.setDate(base.getDate()+i);
-    dates.push(d);
-  }
+  for(let i=0;i<5;i++){ const d=new Date(base); d.setDate(base.getDate()+i); dates.push(d); }
   return dates;
 }
 
-function calcHours(timeIn,timeOut,breakMins){
-  if(!timeIn||!timeOut) return 0;
-  const [h1,m1]=timeIn.split(':').map(Number);
-  const [h2,m2]=timeOut.split(':').map(Number);
-  const mins=(h2*60+m2)-(h1*60+m1)-(parseInt(breakMins)||0);
-  return Math.max(0,mins/60);
+function calcHours(tIn,tOut,brk){
+  if(!tIn||!tOut) return 0;
+  const [h1,m1]=tIn.split(':').map(Number), [h2,m2]=tOut.split(':').map(Number);
+  return Math.max(0,((h2*60+m2)-(h1*60+m1)-(parseInt(brk)||0))/60);
+}
+
+async function loadWeek(key){
+  try {
+    const doc = await db.collection('timesheets').doc(key).get();
+    if(doc.exists) timesheetData[key]=doc.data().days;
+    else timesheetData[key]=DAYS.map(()=>({timeIn:'',timeOut:'',breakMins:'',notes:''}));
+  } catch(e){
+    timesheetData[key]=DAYS.map(()=>({timeIn:'',timeOut:'',breakMins:'',notes:''}));
+  }
+  renderTimesheet();
 }
 
 function renderTimesheet(){
   const dates=getWeekDates(weekOffset);
   const key=getWeekKey(weekOffset);
   const saved=timesheetData[key]||DAYS.map(()=>({timeIn:'',timeOut:'',breakMins:'',notes:''}));
-
-  // Week label
   const s=dates[0].toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  const e=dates[6].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const e=dates[4].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   document.getElementById('weekLabel').textContent=`Week of ${s} – ${e}`;
-
   const tbody=document.getElementById('ts-tbody');
   tbody.innerHTML='';
   let totalHrs=0,daysWorked=0;
-
   DAYS.forEach((day,i)=>{
     const row=saved[i]||{timeIn:'',timeOut:'',breakMins:'',notes:''};
     const hrs=calcHours(row.timeIn,row.timeOut,row.breakMins);
@@ -346,17 +380,15 @@ function renderTimesheet(){
       <td style="color:#94a3b8">${dateStr}</td>
       <td><input type="time" value="${row.timeIn}" onchange="updateCell('${key}',${i},'timeIn',this.value)"></td>
       <td><input type="time" value="${row.timeOut}" onchange="updateCell('${key}',${i},'timeOut',this.value)"></td>
-      <td><input type="number" min="0" max="120" placeholder="0" value="${row.breakMins}" style="max-width:80px" onchange="updateCell('${key}',${i},'breakMins',this.value)"></td>
+      <td><input type="number" min="0" max="120" placeholder="0" value="${row.breakMins||''}" style="max-width:80px" onchange="updateCell('${key}',${i},'breakMins',this.value)"></td>
       <td class="hours-cell ${hrs===0?'zero':''}">${hrs>0?hrs.toFixed(2)+' hrs':'—'}</td>
       <td><input type="text" placeholder="Optional notes" value="${row.notes||''}" onchange="updateCell('${key}',${i},'notes',this.value)"></td>`;
     tbody.appendChild(tr);
   });
-
   const earnings=totalHrs*HOURLY;
   document.getElementById('tsHours').textContent=totalHrs.toFixed(2)+' hrs';
   document.getElementById('tsDays').textContent=daysWorked;
   document.getElementById('tsEarnings').textContent=fmt(earnings);
-
   document.getElementById('ts-total').innerHTML=`
     <td colspan="5" style="text-align:right;color:#94a3b8">Weekly Total:</td>
     <td class="hours-cell">${totalHrs.toFixed(2)} hrs</td>
@@ -369,24 +401,34 @@ function updateCell(key,dayIdx,field,val){
   renderTimesheet();
 }
 
-function changeWeek(dir){ weekOffset+=dir; renderTimesheet(); }
-
-function saveTimesheet(){
+async function saveTimesheet(){
   const key=getWeekKey(weekOffset);
   if(!timesheetData[key]){ alert('Nothing to save yet.'); return; }
-  alert('✅ Timesheet saved for this week!');
+  try {
+    await db.collection('timesheets').doc(key).set({days: timesheetData[key], updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+    const st=document.getElementById('saveStatus');
+    st.classList.add('show');
+    setTimeout(()=>st.classList.remove('show'),3000);
+  } catch(e){ alert('⚠️ Could not save: '+e.message); }
 }
 
-function clearWeek(){
+async function clearWeek(){
   if(!confirm('Clear all entries for this week?')) return;
   const key=getWeekKey(weekOffset);
   timesheetData[key]=DAYS.map(()=>({timeIn:'',timeOut:'',breakMins:'',notes:''}));
+  try { await db.collection('timesheets').doc(key).delete(); } catch(e){}
   renderTimesheet();
 }
 
-// ─── Init ───────────────────────────────────────────────────
-renderPayments();
-renderTimesheet();
+function changeWeek(dir){
+  weekOffset+=dir;
+  const key=getWeekKey(weekOffset);
+  if(!timesheetData[key]) loadWeek(key);
+  else renderTimesheet();
+}
+
+// Init
+loadWeek(getWeekKey(0));
 </script>
 </body>
 </html>
