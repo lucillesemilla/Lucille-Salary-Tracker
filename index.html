@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lucille's Salary Tracker</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-app-compat.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-firestore-compat.min.js"></script>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;padding:24px}
@@ -63,7 +61,8 @@
   .btn-blue{background:#3b82f6;color:#fff}.btn-blue:hover{background:#2563eb}
   .btn-red{background:#dc2626;color:#fff}.btn-red:hover{background:#b91c1c}
   .btn-green{background:#16a34a;color:#fff}.btn-green:hover{background:#15803d}
-  .btn-row{display:flex;gap:10px;flex-wrap:wrap}
+  .btn-gray{background:#334155;color:#e2e8f0}.btn-gray:hover{background:#475569}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center}
   .modal-overlay.show{display:flex}
@@ -92,17 +91,13 @@
   .hours-cell.zero{color:#475569}
   tr.ts-row:hover td{background:#1a2540}
   .total-row td{background:#0f172a!important;font-weight:700;color:#f8fafc;font-size:.9rem}
-
-  .save-status{font-size:.8rem;color:#4ade80;margin-left:12px;opacity:0;transition:opacity .4s}
+  .save-status{font-size:.8rem;color:#4ade80;opacity:0;transition:opacity .4s}
   .save-status.show{opacity:1}
-
-  .loading{text-align:center;padding:40px;color:#64748b;font-size:.9rem}
-  .sync-badge{display:inline-block;background:#0f2e0f;color:#4ade80;border:1px solid #4ade80;border-radius:999px;font-size:.7rem;font-weight:700;padding:2px 10px;margin-left:10px;vertical-align:middle}
 </style>
 </head>
 <body>
 
-<h1>💰 Lucille's Salary Tracker <span class="sync-badge">🔥 Live</span></h1>
+<h1>💰 Lucille's Salary Tracker</h1>
 <p class="subtitle">Monthly rate: $2,400 &nbsp;|&nbsp; $15/hr &nbsp;|&nbsp; Mon–Fri, 8 hrs/day</p>
 
 <div class="tabs">
@@ -141,8 +136,7 @@
     <button class="btn btn-blue" onclick="addPayment()">+ Add Payment</button>
   </div>
   <div class="section-title">Payment History</div>
-  <div id="payments-loading" class="loading">Loading payments...</div>
-  <table id="payments-table" style="display:none">
+  <table>
     <thead>
       <tr><th>#</th><th>Date Received</th><th>Period Covered</th><th>Due Date</th><th>Amount</th><th>Status</th><th>Notes</th><th></th></tr>
     </thead>
@@ -173,8 +167,9 @@
   </table>
   <div class="btn-row">
     <button class="btn btn-green" onclick="saveTimesheet()">💾 Save Week</button>
-    <span class="save-status" id="saveStatus">✅ Saved to cloud!</span>
+    <span class="save-status" id="saveStatus">✅ Saved!</span>
     <button class="btn btn-red" onclick="clearWeek()">🗑 Clear Week</button>
+    <button class="btn btn-gray" onclick="printTimesheet()">🖨 Print / Export</button>
   </div>
 </div>
 
@@ -190,19 +185,6 @@
 </div>
 
 <script>
-// ─── Firebase init ──────────────────────────────────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyDNadGTzewzQGhmTanZviacXccWVyoed6c",
-  authDomain: "lucille-salary-tracker.firebaseapp.com",
-  projectId: "lucille-salary-tracker",
-  storageBucket: "lucille-salary-tracker.firebasestorage.app",
-  messagingSenderId: "498210839077",
-  appId: "1:498210839077:web:80c5d920980944a9da3dcc"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-// ─── Helpers ────────────────────────────────────────────────
 const today = new Date(); today.setHours(0,0,0,0);
 const fmt = n => '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtDate = s => s ? new Date(s+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
@@ -215,40 +197,33 @@ function switchTab(tab) {
 }
 
 // ═══════════════ PAYMENT TRACKER ════════════════════════════
-let payments = [];
+function loadPayments(){
+  try { return JSON.parse(localStorage.getItem('lc_payments'))||defaultPayments(); }
+  catch(e){ return defaultPayments(); }
+}
+function defaultPayments(){
+  return [{id:1,date:"",amount:3000,period:"Feb 23–27 + March 2026",due:"2026-03-02",status:"pending",notes:"Feb partial ($600) + Full March ($2,400) — due Mar 2"}];
+}
+function savePayments(){ localStorage.setItem('lc_payments', JSON.stringify(payments)); }
 
-// Real-time listener
-db.collection('payments').orderBy('createdAt','asc').onSnapshot(snap => {
-  payments = snap.docs.map(d => ({...d.data(), _docId: d.id}));
-  document.getElementById('payments-loading').style.display='none';
-  document.getElementById('payments-table').style.display='table';
-  renderPayments();
-}, err => {
-  document.getElementById('payments-loading').textContent = '⚠️ Could not load payments. Check your connection.';
-});
+let payments = loadPayments();
+let nextId = Math.max(...payments.map(p=>p.id),1)+1;
 
 function updateCountdown() {
-  let nearest = null;
-  payments.forEach(p => {
-    if (p.status!=='paid' && p.due) {
-      const d = new Date(p.due+'T00:00:00');
-      if (!nearest || d < nearest) nearest = d;
-    }
-  });
-  if (!nearest) nearest = new Date(today.getFullYear(), today.getMonth()+1, 1);
-  const diff = Math.round((nearest-today)/86400000);
-  const el = document.getElementById('cdDays'), lbl = document.getElementById('cdLabel');
-  const ds = nearest.toISOString().slice(0,10);
-  if (diff<0){ el.textContent=`${Math.abs(diff)} day${Math.abs(diff)!==1?'s':''} overdue`; el.className='cd-days'; el.style.color='#f87171'; }
-  else if (diff===0){ el.textContent='Due Today!'; el.className='cd-days today'; el.style.color=''; }
-  else if (diff<=7){ el.textContent=`${diff} day${diff!==1?'s':''} left`; el.className='cd-days soon'; el.style.color=''; }
+  let nearest=null;
+  payments.forEach(p=>{ if(p.status!=='paid'&&p.due){ const d=new Date(p.due+'T00:00:00'); if(!nearest||d<nearest) nearest=d; }});
+  if(!nearest) nearest=new Date(today.getFullYear(),today.getMonth()+1,1);
+  const diff=Math.round((nearest-today)/86400000);
+  const el=document.getElementById('cdDays'), lbl=document.getElementById('cdLabel');
+  if(diff<0){ el.textContent=`${Math.abs(diff)} day${Math.abs(diff)!==1?'s':''} overdue`; el.className='cd-days'; el.style.color='#f87171'; }
+  else if(diff===0){ el.textContent='Due Today!'; el.className='cd-days today'; el.style.color=''; }
+  else if(diff<=7){ el.textContent=`${diff} day${diff!==1?'s':''} left`; el.className='cd-days soon'; el.style.color=''; }
   else { el.textContent=`${diff} days until next payment`; el.className='cd-days'; el.style.color=''; }
-  lbl.textContent=`Due: ${fmtDate(ds)}`;
+  lbl.textContent=`Due: ${fmtDate(nearest.toISOString().slice(0,10))}`;
 }
 
 function renderPayments() {
-  const tbody = document.getElementById('tbody');
-  tbody.innerHTML='';
+  const tbody=document.getElementById('tbody'); tbody.innerHTML='';
   let totalPaid=0,totalPending=0,countPaid=0,overduePmts=[];
   payments.forEach((p,i)=>{
     const od=isOverdue(p);
@@ -263,14 +238,13 @@ function renderPayments() {
       <td class="amount ${p.status==='paid'?'paid-amt':'unpaid-amt'}">${fmt(p.amount)}</td>
       <td><span class="badge ${sl}">${sl.charAt(0).toUpperCase()+sl.slice(1)}</span></td>
       <td style="color:#94a3b8;font-size:.82rem">${p.notes||'—'}</td>
-      <td><button class="del-btn" onclick="delPayment('${p._docId}')">✕</button></td>`;
+      <td><button class="del-btn" onclick="delPayment(${p.id})">✕</button></td>`;
     tbody.appendChild(tr);
   });
   document.getElementById('totalPaid').textContent=fmt(totalPaid);
   document.getElementById('totalPending').textContent=fmt(totalPending);
   document.getElementById('countPaid').textContent=countPaid;
   document.getElementById('countOverdue').textContent=overduePmts.length;
-
   const list=document.getElementById('modalItems'); list.innerHTML='';
   const dueTodayPmts=payments.filter(p=>p.status!=='paid'&&p.due&&new Date(p.due+'T00:00:00').getTime()===today.getTime());
   dueTodayPmts.forEach(p=>{ const li=document.createElement('li'); li.textContent=`${p.period||'Unknown'} — ${fmt(p.amount)} (due today)`; list.appendChild(li); });
@@ -282,44 +256,22 @@ function showModal(){ document.getElementById('modalOverlay').classList.add('sho
 function closeModal(){ document.getElementById('modalOverlay').classList.remove('show'); }
 document.getElementById('modalOverlay').addEventListener('click',e=>{ if(e.target.id==='modalOverlay') closeModal(); });
 
-async function addPayment() {
+function addPayment(){
   const amount=parseFloat(document.getElementById('fAmount').value);
   if(!amount||isNaN(amount)){ alert('Please enter a valid amount.'); return; }
-  const p={
-    date:document.getElementById('fDate').value,
-    amount,
-    period:document.getElementById('fPeriod').value.trim(),
-    due:document.getElementById('fDue').value,
-    status:document.getElementById('fStatus').value,
-    notes:document.getElementById('fNotes').value.trim(),
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-  try {
-    await db.collection('payments').add(p);
-    ['fDate','fAmount','fPeriod','fDue','fNotes'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('fStatus').value='paid';
-  } catch(e){ alert('⚠️ Could not save payment: '+e.message); }
+  payments.push({id:nextId++,date:document.getElementById('fDate').value,amount,period:document.getElementById('fPeriod').value.trim(),due:document.getElementById('fDue').value,status:document.getElementById('fStatus').value,notes:document.getElementById('fNotes').value.trim()});
+  savePayments(); renderPayments();
+  ['fDate','fAmount','fPeriod','fDue','fNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fStatus').value='paid';
 }
 
-async function delPayment(docId){
+function delPayment(id){
   if(!confirm('Remove this payment?')) return;
-  try { await db.collection('payments').doc(docId).delete(); }
-  catch(e){ alert('⚠️ Could not delete: '+e.message); }
+  payments=payments.filter(p=>p.id!==id);
+  savePayments(); renderPayments();
 }
 
-// Seed initial payment if collection is empty
-db.collection('payments').get().then(snap => {
-  if(snap.empty){
-    db.collection('payments').add({
-      date:"", amount:3000, period:"Feb 23–27 + March 2026",
-      due:"2026-03-02", status:"pending",
-      notes:"Feb partial ($600) + Full March ($2,400) — due Mar 2",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  }
-});
-
-// ═══════════════ TIMESHEET ══════════════════════════════════
+// ═══════════════ TIMESHEET ════════════════════════════════
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 const HOURLY=15;
 let weekOffset=0;
@@ -334,7 +286,7 @@ function getWeekKey(offset){
 }
 
 function getWeekDates(offset){
-  const dates=[], base=new Date(today);
+  const dates=[],base=new Date(today);
   const dow=(base.getDay()+6)%7;
   base.setDate(base.getDate()-dow+offset*7);
   for(let i=0;i<5;i++){ const d=new Date(base); d.setDate(base.getDate()+i); dates.push(d); }
@@ -343,19 +295,18 @@ function getWeekDates(offset){
 
 function calcHours(tIn,tOut,brk){
   if(!tIn||!tOut) return 0;
-  const [h1,m1]=tIn.split(':').map(Number), [h2,m2]=tOut.split(':').map(Number);
+  const [h1,m1]=tIn.split(':').map(Number),[h2,m2]=tOut.split(':').map(Number);
   return Math.max(0,((h2*60+m2)-(h1*60+m1)-(parseInt(brk)||0))/60);
 }
 
-async function loadWeek(key){
-  try {
-    const doc = await db.collection('timesheets').doc(key).get();
-    if(doc.exists) timesheetData[key]=doc.data().days;
-    else timesheetData[key]=DAYS.map(()=>({timeIn:'',timeOut:'',breakMins:'',notes:''}));
-  } catch(e){
-    timesheetData[key]=DAYS.map(()=>({timeIn:'',timeOut:'',breakMins:'',notes:''}));
+function loadAllTimesheets(){
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&k.startsWith('lc_ts_')){
+      const wk=k.replace('lc_ts_','');
+      try{ timesheetData[wk]=JSON.parse(localStorage.getItem(k)); }catch(e){}
+    }
   }
-  renderTimesheet();
 }
 
 function renderTimesheet(){
@@ -365,8 +316,7 @@ function renderTimesheet(){
   const s=dates[0].toLocaleDateString('en-US',{month:'short',day:'numeric'});
   const e=dates[4].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   document.getElementById('weekLabel').textContent=`Week of ${s} – ${e}`;
-  const tbody=document.getElementById('ts-tbody');
-  tbody.innerHTML='';
+  const tbody=document.getElementById('ts-tbody'); tbody.innerHTML='';
   let totalHrs=0,daysWorked=0;
   DAYS.forEach((day,i)=>{
     const row=saved[i]||{timeIn:'',timeOut:'',breakMins:'',notes:''};
@@ -401,34 +351,54 @@ function updateCell(key,dayIdx,field,val){
   renderTimesheet();
 }
 
-async function saveTimesheet(){
+function saveTimesheet(){
   const key=getWeekKey(weekOffset);
-  if(!timesheetData[key]){ alert('Nothing to save yet.'); return; }
-  try {
-    await db.collection('timesheets').doc(key).set({days: timesheetData[key], updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
-    const st=document.getElementById('saveStatus');
-    st.classList.add('show');
-    setTimeout(()=>st.classList.remove('show'),3000);
-  } catch(e){ alert('⚠️ Could not save: '+e.message); }
+  if(!timesheetData[key]||timesheetData[key].every(r=>!r.timeIn&&!r.timeOut)){ alert('Nothing to save yet.'); return; }
+  localStorage.setItem('lc_ts_'+key, JSON.stringify(timesheetData[key]));
+  const st=document.getElementById('saveStatus');
+  st.classList.add('show');
+  setTimeout(()=>st.classList.remove('show'),3000);
 }
 
-async function clearWeek(){
+function clearWeek(){
   if(!confirm('Clear all entries for this week?')) return;
   const key=getWeekKey(weekOffset);
   timesheetData[key]=DAYS.map(()=>({timeIn:'',timeOut:'',breakMins:'',notes:''}));
-  try { await db.collection('timesheets').doc(key).delete(); } catch(e){}
+  localStorage.removeItem('lc_ts_'+key);
   renderTimesheet();
 }
 
-function changeWeek(dir){
-  weekOffset+=dir;
+function changeWeek(dir){ weekOffset+=dir; renderTimesheet(); }
+
+function printTimesheet(){
+  const dates=getWeekDates(weekOffset);
   const key=getWeekKey(weekOffset);
-  if(!timesheetData[key]) loadWeek(key);
-  else renderTimesheet();
+  const saved=timesheetData[key]||DAYS.map(()=>({timeIn:'',timeOut:'',breakMins:'',notes:''}));
+  const s=dates[0].toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const e=dates[4].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  let rows='',totalHrs=0;
+  DAYS.forEach((day,i)=>{
+    const row=saved[i]||{};
+    const hrs=calcHours(row.timeIn,row.timeOut,row.breakMins);
+    totalHrs+=hrs;
+    rows+=`<tr><td>${day}</td><td>${dates[i].toLocaleDateString('en-US',{month:'short',day:'numeric'})}</td><td>${row.timeIn||'—'}</td><td>${row.timeOut||'—'}</td><td>${row.breakMins||'0'}</td><td>${hrs>0?hrs.toFixed(2)+' hrs':'—'}</td><td>${row.notes||''}</td></tr>`;
+  });
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>Timesheet – ${s} to ${e}</title>
+  <style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h2{margin-bottom:4px}p{color:#555;margin-bottom:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px 12px;text-align:left;font-size:13px}th{background:#f1f5f9}tfoot td{font-weight:700;background:#f8fafc}</style></head>
+  <body><h2>💰 Lucille's Salary Tracker — Weekly Timesheet</h2><p>Week of ${s} – ${e} &nbsp;|&nbsp; Rate: $15.00/hr</p>
+  <table><thead><tr><th>Day</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Break (mins)</th><th>Total Hours</th><th>Notes</th></tr></thead>
+  <tbody>${rows}</tbody>
+  <tfoot><tr><td colspan="5" style="text-align:right">Total:</td><td>${totalHrs.toFixed(2)} hrs</td><td>$${(totalHrs*HOURLY).toFixed(2)}</td></tr></tfoot>
+  </table></body></html>`);
+  win.document.close();
+  win.print();
 }
 
 // Init
-loadWeek(getWeekKey(0));
+loadAllTimesheets();
+renderPayments();
+renderTimesheet();
 </script>
 </body>
 </html>
