@@ -275,6 +275,11 @@ function updateStatus(id, val){
   const p = payments.find(p=>p.id===id);
   if(!p) return;
   p.status = val;
+  if(val === 'paid' && !p.date){
+    const now = new Date();
+    p.date = now.toISOString().slice(0,10);
+  }
+  if(val === 'pending') p.date = '';
   savePayments(); renderPayments();
 }
 
