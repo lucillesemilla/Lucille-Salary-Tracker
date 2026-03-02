@@ -236,7 +236,13 @@ function renderPayments() {
       <td>${p.period||'—'}${od?'<span class="overdue-tag">OVERDUE</span>':''}</td>
       <td style="color:${od?'#f87171':p.status==='paid'?'#4ade80':'#94a3b8'}">${fmtDate(p.due)}</td>
       <td class="amount ${p.status==='paid'?'paid-amt':'unpaid-amt'}">${fmt(p.amount)}</td>
-      <td><span class="badge ${sl}">${sl.charAt(0).toUpperCase()+sl.slice(1)}</span></td>
+      <td>
+        <select onchange="updateStatus(${p.id}, this.value)" style="background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:4px 8px;font-size:.78rem;cursor:pointer">
+          <option value="paid" ${p.status==='paid'?'selected':''}>✅ Paid</option>
+          <option value="pending" ${p.status==='pending'&&!od?'selected':''}>⏳ Pending</option>
+          <option value="overdue" ${od?'selected':''} disabled>🔴 Overdue</option>
+        </select>
+      </td>
       <td style="color:#94a3b8;font-size:.82rem">${p.notes||'—'}</td>
       <td><button class="del-btn" onclick="delPayment(${p.id})">✕</button></td>`;
     tbody.appendChild(tr);
@@ -263,6 +269,13 @@ function addPayment(){
   savePayments(); renderPayments();
   ['fDate','fAmount','fPeriod','fDue','fNotes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fStatus').value='paid';
+}
+
+function updateStatus(id, val){
+  const p = payments.find(p=>p.id===id);
+  if(!p) return;
+  p.status = val;
+  savePayments(); renderPayments();
 }
 
 function delPayment(id){
