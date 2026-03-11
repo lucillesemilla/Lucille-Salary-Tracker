@@ -379,7 +379,16 @@ function lcSwitchTab(tab) {
 }
 
 function loadPayments(){
-  try { return JSON.parse(localStorage.getItem('lc_payments'))||defaultPayments(); }
+  try {
+    const saved = JSON.parse(localStorage.getItem('lc_payments'));
+    if(saved && !localStorage.getItem('lc_payments_v2')){
+      localStorage.removeItem('lc_payments');
+      localStorage.setItem('lc_payments_v2','1');
+      return defaultPayments();
+    }
+    localStorage.setItem('lc_payments_v2','1');
+    return saved || defaultPayments();
+  }
   catch(e){ return defaultPayments(); }
 }
 function defaultPayments(){
