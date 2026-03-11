@@ -3,185 +3,355 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lucille's Salary Tracker</title>
+<title>Salary Tracker</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;padding:24px}
-  h1{font-size:1.6rem;font-weight:700;color:#f8fafc;margin-bottom:4px}
-  .subtitle{color:#94a3b8;font-size:.9rem;margin-bottom:16px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;padding:24px}
+h1{font-size:1.6rem;font-weight:700;color:#f8fafc;margin-bottom:4px}
+.subtitle{color:#94a3b8;font-size:.9rem;margin-bottom:16px}
 
-  .tabs{display:flex;gap:8px;margin-bottom:24px}
-  .tab{padding:10px 24px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#94a3b8;cursor:pointer;font-size:.875rem;font-weight:600;transition:.2s}
-  .tab.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
-  .tab:hover:not(.active){background:#243044;color:#e2e8f0}
-  .page{display:none}.page.active{display:block}
+/* ── Person Switcher ── */
+.person-switcher{display:flex;gap:10px;margin-bottom:20px;align-items:center}
+.person-switcher span{font-size:.8rem;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-right:4px}
+.person-btn{padding:9px 22px;border-radius:10px;border:2px solid #334155;background:#1e293b;color:#94a3b8;font-size:.9rem;font-weight:700;cursor:pointer;transition:.2s}
+.person-btn.lucille.active{background:#1d3461;border-color:#3b82f6;color:#60a5fa;box-shadow:0 0 16px #3b82f640}
+.person-btn.kai.active{background:#1f2a1a;border-color:#22c55e;color:#4ade80;box-shadow:0 0 16px #22c55e40}
+.person-section{display:none}.person-section.active{display:block}
 
-  .countdown-box{background:linear-gradient(135deg,#1e3a5f,#1e293b);border:1px solid #3b82f6;border-radius:12px;padding:14px 20px;margin-bottom:24px;display:flex;align-items:center;gap:14px}
-  .cd-icon{font-size:1.8rem}.cd-text{font-size:.8rem;color:#94a3b8}
-  .cd-days{font-size:1.4rem;font-weight:800;color:#60a5fa}
-  .cd-days.soon{color:#fbbf24}.cd-days.today{color:#4ade80}
+.tabs{display:flex;gap:8px;margin-bottom:24px}
+.tab{padding:10px 24px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#94a3b8;cursor:pointer;font-size:.875rem;font-weight:600;transition:.2s}
+.tab.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
+.tab.active-kai{background:#22c55e;border-color:#22c55e;color:#fff}
+.tab:hover:not(.active):not(.active-kai){background:#243044;color:#e2e8f0}
+.page{display:none}.page.active{display:block}
 
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:28px}
-  .card{background:#1e293b;border-radius:12px;padding:18px;border:1px solid #334155}
-  .card-label{font-size:.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-  .card-value{font-size:1.4rem;font-weight:700}
-  .card-value.green{color:#4ade80}.card-value.blue{color:#60a5fa}
-  .card-value.yellow{color:#fbbf24}.card-value.red{color:#f87171}
+.countdown-box{background:linear-gradient(135deg,#1e3a5f,#1e293b);border:1px solid #3b82f6;border-radius:12px;padding:14px 20px;margin-bottom:24px;display:flex;align-items:center;gap:14px}
+.countdown-box.kai-theme{background:linear-gradient(135deg,#1a3322,#1e293b);border-color:#22c55e}
+.cd-icon{font-size:1.8rem}.cd-text{font-size:.8rem;color:#94a3b8}
+.cd-days{font-size:1.4rem;font-weight:800;color:#60a5fa}
+.cd-days.soon{color:#fbbf24}.cd-days.today{color:#4ade80}
 
-  .section-title{font-size:1rem;font-weight:600;color:#cbd5e1;margin-bottom:12px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:28px}
+.card{background:#1e293b;border-radius:12px;padding:18px;border:1px solid #334155}
+.card-label{font-size:.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.card-value{font-size:1.4rem;font-weight:700}
+.card-value.green{color:#4ade80}.card-value.blue{color:#60a5fa}
+.card-value.yellow{color:#fbbf24}.card-value.red{color:#f87171}
 
-  table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;border:1px solid #334155;margin-bottom:28px}
-  thead tr{background:#0f172a}
-  th{padding:12px 16px;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:#64748b;font-weight:600}
-  td{padding:12px 16px;font-size:.875rem;border-top:1px solid #ffffff08}
-  tr.row-paid td{background:#052e16cc}
-  tr.row-paid:hover td{background:#064e20cc}
-  tr.row-overdue td{background:#2d0e0ecc}
-  tr.row-overdue:hover td{background:#3d1212cc}
-  tr.row-pending td{background:#1e293b}
-  tr.row-pending:hover td{background:#243044}
+.section-title{font-size:1rem;font-weight:600;color:#cbd5e1;margin-bottom:12px}
 
-  .overdue-tag{display:inline-block;padding:2px 7px;border-radius:999px;font-size:.68rem;font-weight:700;background:#7f1d1d;color:#fca5a5;margin-left:6px;animation:pulse 1.5s infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.75rem;font-weight:600}
-  .badge.paid{background:#14532d;color:#4ade80}
-  .badge.pending{background:#422006;color:#fbbf24}
-  .badge.overdue{background:#7f1d1d;color:#fca5a5}
-  .amount{font-weight:700}
-  .amount.paid-amt{color:#4ade80}.amount.unpaid-amt{color:#f87171}
-  .del-btn{background:none;border:none;color:#475569;cursor:pointer;font-size:1rem;padding:2px 6px;border-radius:4px}
-  .del-btn:hover{color:#f87171;background:#3f1a1a}
+table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;border:1px solid #334155;margin-bottom:28px}
+thead tr{background:#0f172a}
+th{padding:12px 16px;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:#64748b;font-weight:600}
+td{padding:12px 16px;font-size:.875rem;border-top:1px solid #ffffff08}
+tr.row-paid td{background:#052e16cc}
+tr.row-paid:hover td{background:#064e20cc}
+tr.row-overdue td{background:#2d0e0ecc}
+tr.row-overdue:hover td{background:#3d1212cc}
+tr.row-pending td{background:#1e293b}
+tr.row-pending:hover td{background:#243044}
 
-  .form-box{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;margin-bottom:28px}
-  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:14px}
-  label{font-size:.75rem;color:#94a3b8;display:block;margin-bottom:4px}
-  input,select{width:100%;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:8px 12px;font-size:.875rem;outline:none}
-  input:focus,select:focus{border-color:#3b82f6}
-  .btn{border:none;border-radius:8px;padding:10px 24px;font-size:.875rem;font-weight:600;cursor:pointer}
-  .btn-blue{background:#3b82f6;color:#fff}.btn-blue:hover{background:#2563eb}
-  .btn-red{background:#dc2626;color:#fff}.btn-red:hover{background:#b91c1c}
-  .btn-green{background:#16a34a;color:#fff}.btn-green:hover{background:#15803d}
-  .btn-gray{background:#334155;color:#e2e8f0}.btn-gray:hover{background:#475569}
-  .btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.overdue-tag{display:inline-block;padding:2px 7px;border-radius:999px;font-size:.68rem;font-weight:700;background:#7f1d1d;color:#fca5a5;margin-left:6px;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.75rem;font-weight:600}
+.badge.paid{background:#14532d;color:#4ade80}
+.badge.pending{background:#422006;color:#fbbf24}
+.badge.overdue{background:#7f1d1d;color:#fca5a5}
+.amount{font-weight:700}
+.amount.paid-amt{color:#4ade80}.amount.unpaid-amt{color:#f87171}
+.del-btn{background:none;border:none;color:#475569;cursor:pointer;font-size:1rem;padding:2px 6px;border-radius:4px}
+.del-btn:hover{color:#f87171;background:#3f1a1a}
 
-  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center}
-  .modal-overlay.show{display:flex}
-  .modal{background:#1e293b;border:2px solid #f87171;border-radius:16px;padding:32px 28px;max-width:400px;width:90%;box-shadow:0 0 50px rgba(248,113,113,.35);text-align:center}
-  .modal-icon{font-size:3rem;margin-bottom:10px}
-  .modal-title{font-size:1.4rem;font-weight:800;color:#f87171;margin-bottom:8px}
-  .modal-sub{color:#94a3b8;font-size:.875rem;margin-bottom:18px;line-height:1.6}
-  .modal-items{background:#0f172a;border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:left}
-  .modal-items li{list-style:none;color:#fca5a5;font-size:.83rem;padding:5px 0;border-bottom:1px solid #1e293b}
-  .modal-items li:last-child{border-bottom:none}
-  .modal-close{background:#f87171;color:#fff;border:none;border-radius:8px;padding:10px 32px;font-size:.9rem;font-weight:700;cursor:pointer;width:100%}
-  .modal-close:hover{background:#ef4444}
+.form-box{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;margin-bottom:28px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:14px}
+label{font-size:.75rem;color:#94a3b8;display:block;margin-bottom:4px}
+input,select{width:100%;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:8px 12px;font-size:.875rem;outline:none}
+input:focus,select:focus{border-color:#3b82f6}
+.btn{border:none;border-radius:8px;padding:10px 24px;font-size:.875rem;font-weight:600;cursor:pointer}
+.btn-blue{background:#3b82f6;color:#fff}.btn-blue:hover{background:#2563eb}
+.btn-green-kai{background:#16a34a;color:#fff}.btn-green-kai:hover{background:#15803d}
+.btn-red{background:#dc2626;color:#fff}.btn-red:hover{background:#b91c1c}
+.btn-green{background:#16a34a;color:#fff}.btn-green:hover{background:#15803d}
+.btn-gray{background:#334155;color:#e2e8f0}.btn-gray:hover{background:#475569}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 
-  .week-nav{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
-  .week-nav button{background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:7px 16px;cursor:pointer;font-size:.85rem}
-  .week-nav button:hover{background:#243044}
-  .week-label{font-size:.95rem;font-weight:700;color:#60a5fa}
-  .ts-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px}
-  .ts-card{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:14px}
-  .ts-card .lbl{font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
-  .ts-card .val{font-size:1.2rem;font-weight:700;color:#60a5fa}
-  .ts-card .val.green{color:#4ade80}
-  td input{background:#0f172a;border:1px solid #1e293b;color:#e2e8f0;border-radius:6px;padding:5px 8px;font-size:.82rem;width:100%;min-width:80px}
-  td input:focus{border-color:#3b82f6;outline:none}
-  .hours-cell{font-weight:700;color:#4ade80}
-  .hours-cell.zero{color:#475569}
-  tr.ts-row:hover td{background:#1a2540}
-  .total-row td{background:#0f172a!important;font-weight:700;color:#f8fafc;font-size:.9rem}
-  .save-status{font-size:.8rem;color:#4ade80;opacity:0;transition:opacity .4s}
-  .save-status.show{opacity:1}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#1e293b;border:2px solid #f87171;border-radius:16px;padding:32px 28px;max-width:400px;width:90%;box-shadow:0 0 50px rgba(248,113,113,.35);text-align:center}
+.modal-icon{font-size:3rem;margin-bottom:10px}
+.modal-title{font-size:1.4rem;font-weight:800;color:#f87171;margin-bottom:8px}
+.modal-sub{color:#94a3b8;font-size:.875rem;margin-bottom:18px;line-height:1.6}
+.modal-items{background:#0f172a;border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:left}
+.modal-items li{list-style:none;color:#fca5a5;font-size:.83rem;padding:5px 0;border-bottom:1px solid #1e293b}
+.modal-items li:last-child{border-bottom:none}
+.modal-close{background:#f87171;color:#fff;border:none;border-radius:8px;padding:10px 32px;font-size:.9rem;font-weight:700;cursor:pointer;width:100%}
+.modal-close:hover{background:#ef4444}
+
+.week-nav{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.week-nav button{background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:7px 16px;cursor:pointer;font-size:.85rem}
+.week-nav button:hover{background:#243044}
+.week-label{font-size:.95rem;font-weight:700;color:#60a5fa}
+.week-label.kai-color{color:#4ade80}
+.ts-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px}
+.ts-card{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:14px}
+.ts-card .lbl{font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.ts-card .val{font-size:1.2rem;font-weight:700;color:#60a5fa}
+.ts-card .val.green{color:#4ade80}
+td input{background:#0f172a;border:1px solid #1e293b;color:#e2e8f0;border-radius:6px;padding:5px 8px;font-size:.82rem;width:100%;min-width:80px}
+td input:focus{border-color:#3b82f6;outline:none}
+.hours-cell{font-weight:700;color:#4ade80}
+.hours-cell.zero{color:#475569}
+tr.ts-row:hover td{background:#1a2540}
+.total-row td{background:#0f172a!important;font-weight:700;color:#f8fafc;font-size:.9rem}
+.save-status{font-size:.8rem;color:#4ade80;opacity:0;transition:opacity .4s}
+.save-status.show{opacity:1}
+
+/* Kai-specific */
+.outstanding-banner{background:linear-gradient(135deg,#2d0e0e,#1e293b);border:1px solid #f87171;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+.outstanding-icon{font-size:1.4rem}
+.outstanding-text{font-size:.85rem;color:#fca5a5;font-weight:600}
+.outstanding-amt{font-size:1.2rem;font-weight:800;color:#f87171;margin-left:auto}
+.ts-history-section{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;margin-bottom:28px}
+.ts-history-title{font-size:.9rem;font-weight:700;color:#4ade80;margin-bottom:14px}
+.history-row{display:grid;grid-template-columns:110px 1fr 55px 85px;gap:10px;padding:7px 0;border-bottom:1px solid #ffffff06;font-size:.83rem;align-items:center}
+.history-row:last-child{border-bottom:none}
+.history-date{color:#94a3b8}
+.history-task{color:#e2e8f0}
+.history-hrs{color:#4ade80;font-weight:700;text-align:right}
+.history-earn{color:#60a5fa;font-weight:700;text-align:right}
+.history-total-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0 0;margin-top:4px;border-top:1px solid #334155}
+.history-total-label{font-size:.8rem;color:#94a3b8;font-weight:600}
+.history-total-val{font-size:1rem;font-weight:800;color:#4ade80}
+.paid-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.68rem;font-weight:700;background:#14532d;color:#4ade80;margin-left:8px}
+.unpaid-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.68rem;font-weight:700;background:#7f1d1d;color:#fca5a5;margin-left:8px;animation:pulse 1.5s infinite}
 </style>
 </head>
 <body>
 
-<h1>💰 Lucille's Salary Tracker</h1>
+<h1>💰 Salary Tracker</h1>
+
+<!-- Person Switcher -->
+<div class="person-switcher">
+  <span>Viewing:</span>
+  <button class="person-btn lucille active" id="btn-lucille" onclick="switchPerson('lucille')">👩 Lucille</button>
+  <button class="person-btn kai" id="btn-kai" onclick="switchPerson('kai')">👨 Kai</button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     LUCILLE — your original code, unchanged
+════════════════════════════════════════════ -->
+<div class="person-section active" id="section-lucille">
+
 <p class="subtitle">Monthly rate: $2,400 &nbsp;|&nbsp; $15/hr &nbsp;|&nbsp; Mon–Fri, 8 hrs/day</p>
 
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('payments')">💳 Payment Tracker</div>
-  <div class="tab" onclick="switchTab('timesheet')">🕐 Weekly Timesheet</div>
+<div class="tab active" onclick="lcSwitchTab('payments')">💳 Payment Tracker</div>
+<div class="tab" onclick="lcSwitchTab('timesheet')">🕐 Weekly Timesheet</div>
 </div>
 
-<!-- PAYMENT TRACKER -->
 <div class="page active" id="page-payments">
-  <div class="countdown-box">
-    <div class="cd-icon">📅</div>
-    <div>
-      <div class="cd-text">Next Payment Due</div>
-      <div class="cd-days" id="cdDays">—</div>
-      <div class="cd-text" id="cdLabel"></div>
-    </div>
-  </div>
-  <div class="cards">
-    <div class="card"><div class="card-label">Total Received</div><div class="card-value green" id="totalPaid">$0</div></div>
-    <div class="card"><div class="card-label">Payments Made</div><div class="card-value blue" id="countPaid">0</div></div>
-    <div class="card"><div class="card-label">Pending Amount</div><div class="card-value yellow" id="totalPending">$0</div></div>
-    <div class="card"><div class="card-label">Overdue</div><div class="card-value red" id="countOverdue">0</div></div>
-  </div>
-  <div class="form-box">
-    <div class="section-title">Add New Payment</div>
-    <div class="form-grid">
-      <div><label>Date Received</label><input type="date" id="fDate"></div>
-      <div><label>Amount ($)</label><input type="number" id="fAmount" placeholder="2400" min="0" step="0.01"></div>
-      <div><label>Period Covered</label><input type="text" id="fPeriod" placeholder="e.g. April 2026"></div>
-      <div><label>Due Date</label><input type="date" id="fDue"></div>
-      <div><label>Status</label>
-        <select id="fStatus"><option value="paid">Paid</option><option value="pending">Pending</option></select>
-      </div>
-      <div><label>Notes (optional)</label><input type="text" id="fNotes" placeholder="e.g. Direct deposit"></div>
-    </div>
-    <button class="btn btn-blue" onclick="addPayment()">+ Add Payment</button>
-  </div>
-  <div class="section-title">Payment History</div>
-  <table>
-    <thead>
-      <tr><th>#</th><th>Date Received</th><th>Period Covered</th><th>Due Date</th><th>Amount</th><th>Status</th><th>Notes</th><th></th></tr>
-    </thead>
-    <tbody id="tbody"></tbody>
-  </table>
+<div class="countdown-box">
+<div class="cd-icon">📅</div>
+<div>
+<div class="cd-text">Next Payment Due</div>
+<div class="cd-days" id="cdDays">—</div>
+<div class="cd-text" id="cdLabel"></div>
+</div>
+</div>
+<div class="cards">
+<div class="card"><div class="card-label">Total Received</div><div class="card-value green" id="totalPaid">$0</div></div>
+<div class="card"><div class="card-label">Payments Made</div><div class="card-value blue" id="countPaid">0</div></div>
+<div class="card"><div class="card-label">Pending Amount</div><div class="card-value yellow" id="totalPending">$0</div></div>
+<div class="card"><div class="card-label">Overdue</div><div class="card-value red" id="countOverdue">0</div></div>
+</div>
+<div class="form-box">
+<div class="section-title">Add New Payment</div>
+<div class="form-grid">
+<div><label>Date Received</label><input type="date" id="fDate"></div>
+<div><label>Amount ($)</label><input type="number" id="fAmount" placeholder="2400" min="0" step="0.01"></div>
+<div><label>Period Covered</label><input type="text" id="fPeriod" placeholder="e.g. April 2026"></div>
+<div><label>Due Date</label><input type="date" id="fDue"></div>
+<div><label>Status</label>
+<select id="fStatus"><option value="paid">Paid</option><option value="pending">Pending</option></select>
+</div>
+<div><label>Notes (optional)</label><input type="text" id="fNotes" placeholder="e.g. Direct deposit"></div>
+</div>
+<button class="btn btn-blue" onclick="addPayment()">+ Add Payment</button>
+</div>
+<div class="section-title">Payment History</div>
+<table>
+<thead>
+<tr><th>#</th><th>Date Received</th><th>Period Covered</th><th>Due Date</th><th>Amount</th><th>Status</th><th>Notes</th><th></th></tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
 </div>
 
-<!-- TIMESHEET -->
 <div class="page" id="page-timesheet">
-  <div class="week-nav">
-    <button onclick="changeWeek(-1)">◀ Prev</button>
-    <div class="week-label" id="weekLabel"></div>
-    <button onclick="changeWeek(1)">Next ▶</button>
-  </div>
-  <div class="ts-summary">
-    <div class="ts-card"><div class="lbl">Total Hours</div><div class="val" id="tsHours">0.00 hrs</div></div>
-    <div class="ts-card"><div class="lbl">Days Worked</div><div class="val" id="tsDays">0</div></div>
-    <div class="ts-card"><div class="lbl">Hourly Rate</div><div class="val">$15.00</div></div>
-    <div class="ts-card"><div class="lbl">Week Earnings</div><div class="val green" id="tsEarnings">$0.00</div></div>
-  </div>
-  <div class="section-title">Timesheet for the Week</div>
-  <table>
-    <thead>
-      <tr><th>Day</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Break (mins)</th><th>Total Hours</th><th>Notes</th></tr>
-    </thead>
-    <tbody id="ts-tbody"></tbody>
-    <tfoot><tr class="total-row" id="ts-total"></tr></tfoot>
-  </table>
-  <div class="btn-row">
-    <button class="btn btn-green" onclick="saveTimesheet()">💾 Save Week</button>
-    <span class="save-status" id="saveStatus">✅ Saved!</span>
-    <button class="btn btn-red" onclick="clearWeek()">🗑 Clear Week</button>
-    <button class="btn btn-gray" onclick="printTimesheet()">🖨 Print / Export</button>
-  </div>
+<div class="week-nav">
+<button onclick="changeWeek(-1)">◀ Prev</button>
+<div class="week-label" id="weekLabel"></div>
+<button onclick="changeWeek(1)">Next ▶</button>
+</div>
+<div class="ts-summary">
+<div class="ts-card"><div class="lbl">Total Hours</div><div class="val" id="tsHours">0.00 hrs</div></div>
+<div class="ts-card"><div class="lbl">Days Worked</div><div class="val" id="tsDays">0</div></div>
+<div class="ts-card"><div class="lbl">Hourly Rate</div><div class="val">$15.00</div></div>
+<div class="ts-card"><div class="lbl">Week Earnings</div><div class="val green" id="tsEarnings">$0.00</div></div>
+</div>
+<div class="section-title">Timesheet for the Week</div>
+<table>
+<thead>
+<tr><th>Day</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Break (mins)</th><th>Total Hours</th><th>Notes</th></tr>
+</thead>
+<tbody id="ts-tbody"></tbody>
+<tfoot><tr class="total-row" id="ts-total"></tr></tfoot>
+</table>
+<div class="btn-row">
+<button class="btn btn-green" onclick="saveTimesheet()">💾 Save Week</button>
+<span class="save-status" id="saveStatus">✅ Saved!</span>
+<button class="btn btn-red" onclick="clearWeek()">🗑 Clear Week</button>
+<button class="btn btn-gray" onclick="printTimesheet()">🖨 Print / Export</button>
+</div>
 </div>
 
-<!-- Modal -->
+</div><!-- end section-lucille -->
+
+<!-- ═══════════════════════════════════════════
+     KAI — added on top of your base
+════════════════════════════════════════════ -->
+<div class="person-section" id="section-kai">
+
+<p class="subtitle">Rate: $15/hr &nbsp;|&nbsp; Task-based hours</p>
+
+<div class="tabs">
+<div class="tab active-kai" onclick="kaiSwitchTab('payments')">💳 Payment Tracker</div>
+<div class="tab" onclick="kaiSwitchTab('timesheet')">🕐 Weekly Timesheet</div>
+<div class="tab" onclick="kaiSwitchTab('history')">📋 Timesheet History</div>
+</div>
+
+<div class="page active" id="kai-page-payments">
+<div class="countdown-box kai-theme">
+<div class="cd-icon">📅</div>
+<div>
+<div class="cd-text">Next Payment Due</div>
+<div class="cd-days" id="kai-cdDays" style="color:#4ade80">—</div>
+<div class="cd-text" id="kai-cdLabel"></div>
+</div>
+</div>
+<div class="outstanding-banner" id="kai-outstanding-banner">
+<div class="outstanding-icon">⚠️</div>
+<div class="outstanding-text">Outstanding balance owed to Kai</div>
+<div class="outstanding-amt" id="kai-outstanding-amt">$195.00</div>
+</div>
+<div class="cards">
+<div class="card"><div class="card-label">Total Received</div><div class="card-value green" id="kai-totalPaid">$0</div></div>
+<div class="card"><div class="card-label">Payments Made</div><div class="card-value blue" id="kai-countPaid">0</div></div>
+<div class="card"><div class="card-label">Pending Amount</div><div class="card-value yellow" id="kai-totalPending">$0</div></div>
+<div class="card"><div class="card-label">Overdue</div><div class="card-value red" id="kai-countOverdue">0</div></div>
+</div>
+<div class="form-box">
+<div class="section-title">Add New Payment</div>
+<div class="form-grid">
+<div><label>Date Received</label><input type="date" id="kai-fDate"></div>
+<div><label>Amount ($)</label><input type="number" id="kai-fAmount" placeholder="195" min="0" step="0.01"></div>
+<div><label>Period Covered</label><input type="text" id="kai-fPeriod" placeholder="e.g. March 2026"></div>
+<div><label>Due Date</label><input type="date" id="kai-fDue"></div>
+<div><label>Status</label><select id="kai-fStatus"><option value="paid">Paid</option><option value="pending">Pending</option></select></div>
+<div><label>Notes (optional)</label><input type="text" id="kai-fNotes" placeholder="e.g. Bank transfer"></div>
+</div>
+<button class="btn btn-green-kai" onclick="kaiAddPayment()">+ Add Payment</button>
+</div>
+<div class="section-title">Payment History</div>
+<table>
+<thead><tr><th>#</th><th>Date Received</th><th>Period Covered</th><th>Due Date</th><th>Amount</th><th>Status</th><th>Notes</th><th></th></tr></thead>
+<tbody id="kai-tbody"></tbody>
+</table>
+</div>
+
+<div class="page" id="kai-page-timesheet">
+<div class="week-nav">
+<button onclick="kaiChangeWeek(-1)">◀ Prev</button>
+<div class="week-label kai-color" id="kai-weekLabel"></div>
+<button onclick="kaiChangeWeek(1)">Next ▶</button>
+</div>
+<div class="ts-summary">
+<div class="ts-card"><div class="lbl">Total Hours</div><div class="val" id="kai-tsHours">0.00 hrs</div></div>
+<div class="ts-card"><div class="lbl">Days Worked</div><div class="val" id="kai-tsDays">0</div></div>
+<div class="ts-card"><div class="lbl">Hourly Rate</div><div class="val">$15.00</div></div>
+<div class="ts-card"><div class="lbl">Week Earnings</div><div class="val green" id="kai-tsEarnings">$0.00</div></div>
+</div>
+<div class="section-title">Timesheet for the Week</div>
+<table>
+<thead><tr><th>Day</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Break (mins)</th><th>Total Hours</th><th>Notes</th></tr></thead>
+<tbody id="kai-ts-tbody"></tbody>
+<tfoot><tr class="total-row" id="kai-ts-total"></tr></tfoot>
+</table>
+<div class="btn-row">
+<button class="btn btn-green" onclick="kaiSaveTimesheet()">💾 Save Week</button>
+<span class="save-status" id="kai-saveStatus">✅ Saved!</span>
+<button class="btn btn-red" onclick="kaiClearWeek()">🗑 Clear Week</button>
+<button class="btn btn-gray" onclick="kaiPrintTimesheet()">🖨 Print / Export</button>
+</div>
+</div>
+
+<div class="page" id="kai-page-history">
+<div class="section-title">Logged Timesheet History</div>
+<div class="ts-history-section">
+<div class="ts-history-title">February 2026 <span class="paid-chip">✔ PAID Mar 2, 2026</span></div>
+<div class="history-row" style="font-size:.72rem;color:#64748b;font-weight:700;padding-bottom:6px">
+<div>DATE</div><div>TASK</div><div style="text-align:right">HRS</div><div style="text-align:right">EARNED</div>
+</div>
+<div class="history-row"><div class="history-date">Feb 3</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">2h</div><div class="history-earn">$30</div></div>
+<div class="history-row"><div class="history-date">Feb 4</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">2h</div><div class="history-earn">$30</div></div>
+<div class="history-row"><div class="history-date">Feb 5</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">5h</div><div class="history-earn">$75</div></div>
+<div class="history-row"><div class="history-date">Feb 6</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">3h</div><div class="history-earn">$45</div></div>
+<div class="history-row"><div class="history-date">Feb 9</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">3h</div><div class="history-earn">$45</div></div>
+<div class="history-row"><div class="history-date">Feb 10</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">1h</div><div class="history-earn">$15</div></div>
+<div class="history-row"><div class="history-date">Feb 11</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">3h</div><div class="history-earn">$45</div></div>
+<div class="history-row"><div class="history-date">Feb 12</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">3h</div><div class="history-earn">$45</div></div>
+<div class="history-row"><div class="history-date">Feb 13</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">3h</div><div class="history-earn">$45</div></div>
+<div class="history-row"><div class="history-date">Feb 17</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">2h</div><div class="history-earn">$30</div></div>
+<div class="history-row"><div class="history-date">Feb 18</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">3h</div><div class="history-earn">$45</div></div>
+<div class="history-row"><div class="history-date">Feb 23</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">2h</div><div class="history-earn">$30</div></div>
+<div class="history-row"><div class="history-date">Feb 24</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">3h</div><div class="history-earn">$45</div></div>
+<div class="history-row"><div class="history-date">Feb 25</div><div class="history-task">Claude & PCGX CIP download & update</div><div class="history-hrs">4h</div><div class="history-earn">$60</div></div>
+<div class="history-row"><div class="history-date">Feb 26</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">4h</div><div class="history-earn">$60</div></div>
+<div class="history-row"><div class="history-date">Feb 27</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">4h</div><div class="history-earn">$60</div></div>
+<div class="history-total-row">
+<div class="history-total-label">February Total (47 hrs)</div>
+<div class="history-total-val">$705.00</div>
+</div>
+</div>
+<div class="ts-history-section">
+<div class="ts-history-title">March 2026 — Week of Mar 2–8 <span class="unpaid-chip">⚠ UNPAID</span></div>
+<div class="history-row" style="font-size:.72rem;color:#64748b;font-weight:700;padding-bottom:6px">
+<div>DATE</div><div>TASK</div><div style="text-align:right">HRS</div><div style="text-align:right">EARNED</div>
+</div>
+<div class="history-row"><div class="history-date">Mar 2</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">2h</div><div class="history-earn">$30</div></div>
+<div class="history-row"><div class="history-date">Mar 3</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">2h</div><div class="history-earn">$30</div></div>
+<div class="history-row"><div class="history-date">Mar 4</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">3h</div><div class="history-earn">$45</div></div>
+<div class="history-row"><div class="history-date">Mar 5</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">2h</div><div class="history-earn">$30</div></div>
+<div class="history-row"><div class="history-date">Mar 6</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">3h</div><div class="history-earn">$45</div></div>
+<div class="history-row"><div class="history-date">Mar 7</div><div class="history-task">PCGX CIP download & update</div><div class="history-hrs">1h</div><div class="history-earn">$15</div></div>
+<div class="history-total-row">
+<div class="history-total-label">March Week 1 Total (13 hrs)</div>
+<div class="history-total-val" style="color:#f87171">$195.00 owed</div>
+</div>
+</div>
+</div>
+
+</div><!-- end section-kai -->
+
+<!-- Shared Modal -->
 <div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <div class="modal-icon">🔔</div>
-    <div class="modal-title">Payment Due!</div>
-    <div class="modal-sub">The following payments are due today. Please follow up as needed.</div>
-    <ul class="modal-items" id="modalItems"></ul>
-    <button class="modal-close" onclick="closeModal()">Got It</button>
-  </div>
+<div class="modal">
+<div class="modal-icon">🔔</div>
+<div class="modal-title">Payment Due!</div>
+<div class="modal-sub">The following payments are due today. Please follow up as needed.</div>
+<ul class="modal-items" id="modalItems"></ul>
+<button class="modal-close" onclick="closeModal()">Got It</button>
+</div>
 </div>
 
 <script>
@@ -190,19 +360,33 @@ const fmt = n => '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFr
 const fmtDate = s => s ? new Date(s+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
 const isOverdue = p => p.status!=='paid' && p.due && new Date(p.due+'T00:00:00') < today;
 
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['payments','timesheet'][i]===tab));
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+tab).classList.add('active');
+// ── Person switcher ───────────────────────────────────────
+function switchPerson(person) {
+  document.querySelectorAll('.person-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('section-'+person).classList.add('active');
+  document.getElementById('btn-lucille').classList.toggle('active', person==='lucille');
+  document.getElementById('btn-kai').classList.toggle('active', person==='kai');
 }
 
-// ═══════════════ PAYMENT TRACKER ════════════════════════════
+// ════════════════════════════════════════
+//  LUCILLE — your original functions
+// ════════════════════════════════════════
+function lcSwitchTab(tab) {
+  document.querySelectorAll('#section-lucille .tab').forEach((t,i)=>t.classList.toggle('active',['payments','timesheet'][i]===tab));
+  document.querySelectorAll('#section-lucille .page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  if(tab==='timesheet') renderTimesheet();
+}
+
 function loadPayments(){
   try { return JSON.parse(localStorage.getItem('lc_payments'))||defaultPayments(); }
   catch(e){ return defaultPayments(); }
 }
 function defaultPayments(){
-  return [{id:1,date:"",amount:3000,period:"Feb 23–27 + March 2026",due:"2026-03-02",status:"pending",notes:"Feb partial ($600) + Full March ($2,400) — due Mar 2"}];
+  return [
+    {id:1,date:"2026-03-02",amount:3000,period:"Feb 23–27 + March 2026",due:"2026-03-02",status:"paid",notes:"Feb partial ($600) + Full March ($2,400) — paid Mar 2"},
+    {id:2,date:"",amount:2400,period:"April 2026",due:"2026-04-01",status:"pending",notes:"April monthly pay"}
+  ];
 }
 function savePayments(){ localStorage.setItem('lc_payments', JSON.stringify(payments)); }
 
@@ -275,10 +459,7 @@ function updateStatus(id, val){
   const p = payments.find(p=>p.id===id);
   if(!p) return;
   p.status = val;
-  if(val === 'paid' && !p.date){
-    const now = new Date();
-    p.date = now.toISOString().slice(0,10);
-  }
+  if(val === 'paid' && !p.date){ const now = new Date(); p.date = now.toISOString().slice(0,10); }
   if(val === 'pending') p.date = '';
   savePayments(); renderPayments();
 }
@@ -289,7 +470,6 @@ function delPayment(id){
   savePayments(); renderPayments();
 }
 
-// ═══════════════ TIMESHEET ════════════════════════════════
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 const HOURLY=15;
 let weekOffset=0;
@@ -413,10 +593,219 @@ function printTimesheet(){
   win.print();
 }
 
-// Init
+// ════════════════════════════════════════
+//  KAI — separate namespace (kai prefix)
+// ════════════════════════════════════════
+function kaiSwitchTab(tab) {
+  const tabNames=['payments','timesheet','history'];
+  document.querySelectorAll('#section-kai .tab').forEach((t,i)=>{
+    t.classList.remove('active-kai');
+    if(tabNames[i]===tab) t.classList.add('active-kai');
+  });
+  document.querySelectorAll('#section-kai .page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('kai-page-'+tab).classList.add('active');
+  if(tab==='timesheet') kaiRenderTimesheet();
+}
+
+function kaiLoadPayments(){
+  try { return JSON.parse(localStorage.getItem('kai_payments'))||kaiDefaultPayments(); }
+  catch(e){ return kaiDefaultPayments(); }
+}
+function kaiDefaultPayments(){
+  return [
+    {id:1,date:'2026-03-02',amount:705,period:'February 2026',due:'2026-03-02',status:'paid',notes:'Feb 2026 timesheet (47 hrs)'},
+    {id:2,date:'',amount:195,period:'March 2026 (Mar 2–8)',due:'2026-03-15',status:'pending',notes:'March week 1 (13 hrs) — UNPAID'}
+  ];
+}
+function kaiSavePayments(){ localStorage.setItem('kai_payments', JSON.stringify(kaiPayments)); }
+
+let kaiPayments = kaiLoadPayments();
+let kaiNextId = Math.max(...kaiPayments.map(p=>p.id),1)+1;
+
+function kaiUpdateCountdown(){
+  let nearest=null;
+  kaiPayments.forEach(p=>{ if(p.status!=='paid'&&p.due){ const d=new Date(p.due+'T00:00:00'); if(!nearest||d<nearest) nearest=d; }});
+  if(!nearest) nearest=new Date(today.getFullYear(),today.getMonth()+1,1);
+  const diff=Math.round((nearest-today)/86400000);
+  const el=document.getElementById('kai-cdDays'), lbl=document.getElementById('kai-cdLabel');
+  if(diff<0){ el.textContent=`${Math.abs(diff)} day${Math.abs(diff)!==1?'s':''} overdue`; el.style.color='#f87171'; }
+  else if(diff===0){ el.textContent='Due Today!'; el.style.color='#4ade80'; }
+  else if(diff<=7){ el.textContent=`${diff} day${diff!==1?'s':''} left`; el.style.color='#fbbf24'; }
+  else { el.textContent=`${diff} days until next payment`; el.style.color='#4ade80'; }
+  lbl.textContent=`Due: ${fmtDate(nearest.toISOString().slice(0,10))}`;
+}
+
+function kaiRenderPayments(){
+  const tbody=document.getElementById('kai-tbody'); tbody.innerHTML='';
+  let totalPaid=0,totalPending=0,countPaid=0,overduePmts=[];
+  kaiPayments.forEach((p,i)=>{
+    const od=isOverdue(p);
+    if(p.status==='paid'){totalPaid+=p.amount;countPaid++;}
+    else{totalPending+=p.amount;if(od)overduePmts.push(p);}
+    const rowClass=p.status==='paid'?'row-paid':od?'row-overdue':'row-pending';
+    const tr=document.createElement('tr'); tr.className=rowClass;
+    tr.innerHTML=`<td>${i+1}</td><td>${fmtDate(p.date)}</td>
+      <td>${p.period||'—'}${od?'<span class="overdue-tag">OVERDUE</span>':''}</td>
+      <td style="color:${od?'#f87171':p.status==='paid'?'#4ade80':'#94a3b8'}">${fmtDate(p.due)}</td>
+      <td class="amount ${p.status==='paid'?'paid-amt':'unpaid-amt'}">${fmt(p.amount)}</td>
+      <td>
+        <select onchange="kaiUpdateStatus(${p.id},this.value)" style="background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:4px 8px;font-size:.78rem;cursor:pointer">
+          <option value="paid" ${p.status==='paid'?'selected':''}>✅ Paid</option>
+          <option value="pending" ${p.status==='pending'&&!od?'selected':''}>⏳ Pending</option>
+          <option value="overdue" ${od?'selected':''} disabled>🔴 Overdue</option>
+        </select>
+      </td>
+      <td style="color:#94a3b8;font-size:.82rem">${p.notes||'—'}</td>
+      <td><button class="del-btn" onclick="kaiDelPayment(${p.id})">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('kai-totalPaid').textContent=fmt(totalPaid);
+  document.getElementById('kai-totalPending').textContent=fmt(totalPending);
+  document.getElementById('kai-countPaid').textContent=countPaid;
+  document.getElementById('kai-countOverdue').textContent=overduePmts.length;
+  const banner=document.getElementById('kai-outstanding-banner');
+  document.getElementById('kai-outstanding-amt').textContent=fmt(totalPending);
+  banner.style.display=totalPending>0?'flex':'none';
+  kaiUpdateCountdown();
+}
+
+function kaiAddPayment(){
+  const amount=parseFloat(document.getElementById('kai-fAmount').value);
+  if(!amount||isNaN(amount)){ alert('Please enter a valid amount.'); return; }
+  kaiPayments.push({id:kaiNextId++,date:document.getElementById('kai-fDate').value,amount,period:document.getElementById('kai-fPeriod').value.trim(),due:document.getElementById('kai-fDue').value,status:document.getElementById('kai-fStatus').value,notes:document.getElementById('kai-fNotes').value.trim()});
+  kaiSavePayments(); kaiRenderPayments();
+  ['kai-fDate','kai-fAmount','kai-fPeriod','kai-fDue','kai-fNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('kai-fStatus').value='paid';
+}
+
+function kaiUpdateStatus(id,val){
+  const p=kaiPayments.find(p=>p.id===id);
+  if(!p) return;
+  p.status=val;
+  if(val==='paid'&&!p.date){ const now=new Date(); p.date=now.toISOString().slice(0,10); }
+  if(val==='pending') p.date='';
+  kaiSavePayments(); kaiRenderPayments();
+}
+
+function kaiDelPayment(id){
+  if(!confirm('Remove this payment?')) return;
+  kaiPayments=kaiPayments.filter(p=>p.id!==id);
+  kaiSavePayments(); kaiRenderPayments();
+}
+
+let kaiWeekOffset=0;
+let kaiTimesheetData={};
+
+function kaiGetWeekKey(offset){
+  const d=new Date(today);
+  d.setDate(d.getDate()-((d.getDay()+6)%7)+offset*7);
+  const jan1=new Date(d.getFullYear(),0,1);
+  const wk=Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
+  return `${d.getFullYear()}-W${String(wk).padStart(2,'0')}`;
+}
+
+function kaiLoadAllTimesheets(){
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&k.startsWith('kai_ts_')){
+      const wk=k.replace('kai_ts_','');
+      try{ kaiTimesheetData[wk]=JSON.parse(localStorage.getItem(k)); }catch(e){}
+    }
+  }
+}
+
+function kaiRenderTimesheet(){
+  const dates=getWeekDates(kaiWeekOffset);
+  const key=kaiGetWeekKey(kaiWeekOffset);
+  const saved=kaiTimesheetData[key]||DAYS.map(()=>({timeIn:'',timeOut:'',breakMins:'',notes:''}));
+  const s=dates[0].toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const e=dates[4].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  document.getElementById('kai-weekLabel').textContent=`Week of ${s} – ${e}`;
+  const tbody=document.getElementById('kai-ts-tbody'); tbody.innerHTML='';
+  let totalHrs=0,daysWorked=0;
+  DAYS.forEach((day,i)=>{
+    const row=saved[i]||{timeIn:'',timeOut:'',breakMins:'',notes:''};
+    const hrs=calcHours(row.timeIn,row.timeOut,row.breakMins);
+    if(hrs>0){totalHrs+=hrs;daysWorked++;}
+    const dateStr=dates[i].toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const isToday=dates[i].toDateString()===new Date().toDateString();
+    const tr=document.createElement('tr'); tr.className='ts-row';
+    tr.innerHTML=`
+      <td style="font-weight:600;color:${isToday?'#4ade80':'#e2e8f0'}">${day}${isToday?' <span style="font-size:.7rem;color:#4ade80">(Today)</span>':''}</td>
+      <td style="color:#94a3b8">${dateStr}</td>
+      <td><input type="time" value="${row.timeIn}" onchange="kaiUpdateCell('${key}',${i},'timeIn',this.value)"></td>
+      <td><input type="time" value="${row.timeOut}" onchange="kaiUpdateCell('${key}',${i},'timeOut',this.value)"></td>
+      <td><input type="number" min="0" max="120" placeholder="0" value="${row.breakMins||''}" style="max-width:80px" onchange="kaiUpdateCell('${key}',${i},'breakMins',this.value)"></td>
+      <td class="hours-cell ${hrs===0?'zero':''}">${hrs>0?hrs.toFixed(2)+' hrs':'—'}</td>
+      <td><input type="text" placeholder="Optional notes" value="${row.notes||''}" onchange="kaiUpdateCell('${key}',${i},'notes',this.value)"></td>`;
+    tbody.appendChild(tr);
+  });
+  const earnings=totalHrs*HOURLY;
+  document.getElementById('kai-tsHours').textContent=totalHrs.toFixed(2)+' hrs';
+  document.getElementById('kai-tsDays').textContent=daysWorked;
+  document.getElementById('kai-tsEarnings').textContent=fmt(earnings);
+  document.getElementById('kai-ts-total').innerHTML=`
+    <td colspan="5" style="text-align:right;color:#94a3b8">Weekly Total:</td>
+    <td class="hours-cell">${totalHrs.toFixed(2)} hrs</td>
+    <td style="color:#4ade80;font-weight:700">${fmt(earnings)}</td>`;
+}
+
+function kaiUpdateCell(key,dayIdx,field,val){
+  if(!kaiTimesheetData[key]) kaiTimesheetData[key]=DAYS.map(()=>({timeIn:'',timeOut:'',breakMins:'',notes:''}));
+  kaiTimesheetData[key][dayIdx][field]=val;
+  kaiRenderTimesheet();
+}
+
+function kaiSaveTimesheet(){
+  const key=kaiGetWeekKey(kaiWeekOffset);
+  if(!kaiTimesheetData[key]||kaiTimesheetData[key].every(r=>!r.timeIn&&!r.timeOut)){ alert('Nothing to save yet.'); return; }
+  localStorage.setItem('kai_ts_'+key, JSON.stringify(kaiTimesheetData[key]));
+  const st=document.getElementById('kai-saveStatus');
+  st.classList.add('show');
+  setTimeout(()=>st.classList.remove('show'),3000);
+}
+
+function kaiClearWeek(){
+  if(!confirm('Clear all entries for this week?')) return;
+  const key=kaiGetWeekKey(kaiWeekOffset);
+  kaiTimesheetData[key]=DAYS.map(()=>({timeIn:'',timeOut:'',breakMins:'',notes:''}));
+  localStorage.removeItem('kai_ts_'+key);
+  kaiRenderTimesheet();
+}
+
+function kaiChangeWeek(dir){ kaiWeekOffset+=dir; kaiRenderTimesheet(); }
+
+function kaiPrintTimesheet(){
+  const dates=getWeekDates(kaiWeekOffset);
+  const key=kaiGetWeekKey(kaiWeekOffset);
+  const saved=kaiTimesheetData[key]||DAYS.map(()=>({timeIn:'',timeOut:'',breakMins:'',notes:''}));
+  const s=dates[0].toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const e=dates[4].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  let rows='',totalHrs=0;
+  DAYS.forEach((day,i)=>{
+    const row=saved[i]||{};
+    const hrs=calcHours(row.timeIn,row.timeOut,row.breakMins);
+    totalHrs+=hrs;
+    rows+=`<tr><td>${day}</td><td>${dates[i].toLocaleDateString('en-US',{month:'short',day:'numeric'})}</td><td>${row.timeIn||'—'}</td><td>${row.timeOut||'—'}</td><td>${row.breakMins||'0'}</td><td>${hrs>0?hrs.toFixed(2)+' hrs':'—'}</td><td>${row.notes||''}</td></tr>`;
+  });
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>Timesheet – Kai – ${s} to ${e}</title>
+  <style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h2{margin-bottom:4px}p{color:#555;margin-bottom:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px 12px;text-align:left;font-size:13px}th{background:#f1f5f9}tfoot td{font-weight:700;background:#f8fafc}</style></head>
+  <body><h2>💰 Kai's Salary Tracker — Weekly Timesheet</h2><p>Week of ${s} – ${e} &nbsp;|&nbsp; Rate: $15.00/hr</p>
+  <table><thead><tr><th>Day</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Break (mins)</th><th>Total Hours</th><th>Notes</th></tr></thead>
+  <tbody>${rows}</tbody>
+  <tfoot><tr><td colspan="5" style="text-align:right">Total:</td><td>${totalHrs.toFixed(2)} hrs</td><td>$${(totalHrs*HOURLY).toFixed(2)}</td></tr></tfoot>
+  </table></body></html>`);
+  win.document.close(); win.print();
+}
+
+// ── Init ──────────────────────────────────────────────────
 loadAllTimesheets();
 renderPayments();
 renderTimesheet();
+kaiLoadAllTimesheets();
+kaiRenderPayments();
+kaiRenderTimesheet();
 </script>
 </body>
 </html>
